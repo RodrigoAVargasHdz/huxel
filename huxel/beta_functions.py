@@ -28,7 +28,7 @@ def _f_beta(method):
         return wrapper  
     elif method == 'linear_freezeR':
         def wrapper(*args):
-            return _beta_r_linear(*args[0],lax.stop_gradient(*args[1]),*args[2],*args[3])
+            return _beta_r_linear(args[0],lax.stop_gradient(args[1]),args[2],args[3])
         return wrapper   
     elif method == 'constant'or method == 'c' or method == 'randW':
         def wrapper(*args):
