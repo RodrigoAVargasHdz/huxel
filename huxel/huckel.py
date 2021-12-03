@@ -7,12 +7,12 @@ from jax.tree_util import tree_flatten, tree_unflatten, tree_multimap
 from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
 
-def linear_model_pred(params_tot,batch,f_beta):
-    params_lr, params = params_tot
-    alpha,beta = params_lr
+def linear_model_pred(params,batch,f_beta):
+    # params_lr, params = params_tot
+    # alpha,beta = params_lr
 
     z_pred,y_true = f_homo_lumo_gap_batch(params,batch,f_beta)
-    y_pred = beta*z_pred + alpha
+    y_pred = params['beta']*z_pred + params['alpha']
     return y_pred,z_pred,y_true
 
 def f_homo_lumo_gap_batch(params,batch,f_beta):
@@ -46,7 +46,8 @@ def _construct_huckel_matrix(params,molecule,f_beta):
     dm = molecule.dm
     # atom_types = molecule['atom_types']
     # conectivity_matrix = molecule['conectivity_matrix']
-    h_x, h_xy, r_xy, y_xy = params
+    # h_x, h_xy, r_xy, y_xy = params
+    h_x = params['h_x']
 
 
     huckel_matrix = jnp.zeros_like(conectivity_matrix,dtype=jnp.float32)
@@ -56,12 +57,12 @@ def _construct_huckel_matrix(params,molecule,f_beta):
         atom_type_j = atom_types[j]
         key = frozenset([atom_type_i, atom_type_j])
 
-        beta_ = f_beta(h_xy[key],r_xy[key],y_xy[key],dm[i,j])
+        beta_ = f_beta(params['h_xy'][key],params['r_xy'][key],params['y_xy'][key],dm[i,j])
         
         huckel_matrix = huckel_matrix.at[i,j].set(beta_)
 
     # diagonal terms
-    diag = jnp.stack([h_x[c] for c in atom_types])
+    diag = jnp.stack([params['h_x'][c] for c in atom_types])
     huckel_matrix = huckel_matrix + jnp.diag(diag.ravel())
     
     electrons = _electrons(atom_types)

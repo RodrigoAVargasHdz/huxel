@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=16, help='batches')
     parser.add_argument('--job', type=str, default='opt', help='job type')
     parser.add_argument('--beta', type=str, default='c', help='beta function type')
-    parser.add_argument('--randW', type=bool, default=False, help='random initial params')
+    parser.add_argument('--randW', type=bool, default=True, help='random initial params')
 
     # bathch_size = #1024#768#512#256#128#64#32
     args = parser.parse_args()

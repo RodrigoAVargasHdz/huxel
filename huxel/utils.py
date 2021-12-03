@@ -6,6 +6,8 @@ import jax.numpy as jnp
 
 from huxel.molecule import myMolecule
 from huxel.parameters import H_X, H_XY, R_XY, Y_XY, N_ELECTRONS
+from huxel.parameters import h_x_tree, h_x_flat, h_xy_tree, h_xy_flat
+from huxel.parameters import f_dif_pytrees, f_div_pytrees
 
 # r_dir = './Results_xyz_constant_random_params/'
 #'./Results_xyz/'
@@ -169,43 +171,51 @@ def get_y_xy_random(key):
     y_xy_random = jax.tree_util.tree_unflatten(y_xy_tree,y_xy_random_flat)
     return y_xy_random, subkey
     
+def get_params_pytrees(alpha,beta,h_x,h_xy,r_xy,y_xy):
+    params_init = {'alpha': alpha,
+                    'beta': beta,
+                    'h_x': h_x,
+                    'h_xy': h_xy,
+                    'r_xy': r_xy,
+                    'y_xy': y_xy,
+    }   
+    return params_init 
+
 # include alpha y beta in the new parameters
 def get_default_params():
-    h_x = H_X
-    h_xy = H_XY
-    r_xy = R_XY
-    y_xy = Y_XY
-    params_coulson = (h_x,h_xy,r_xy,y_xy)
     params_lr = get_init_params_lr()
-    params_init = (params_lr,params_coulson)
-    return params_init
-
+    # params_init = (params_lr,params_coulson)
+    params_init = {'alpha': params_lr[0],
+                    'beta': params_lr[1],
+                    'h_x': H_X,
+                    'h_xy': H_XY,
+                    'r_xy': R_XY,
+                    'y_xy': Y_XY,
+    }
+    return get_params_pytrees(params_lr[0],params_lr[1],H_X,H_XY,R_XY,Y_XY)
 def get_random_params(files,key):
     if not os.path.isfile(files['f_w']): 
         params_init = get_default_params()
-        params_lr,params_coulson = params_init
+        # params_lr,params_coulson = params_init
 
         alpha_random = jax.random.uniform(key,shape=(1,),minval=-1.,maxval=1.)
         _, subkey = jax.random.split(key)
         beta_random = jax.random.uniform(subkey,shape=(1,),minval=-1.,maxval=1.) 
         _, subkey = jax.random.split(subkey)
 
-        params_lr = (alpha_random,beta_random)
-
-        h_x = params_coulson[0]
+        h_x = params_init['h_x']
         h_x_random,subkey = random_pytrees(h_x,subkey,-1.,1.)
 
-        h_xy = params_coulson[1]
+        h_xy = params_init['h_xy']
         h_xy_random,subkey = random_pytrees(h_xy,subkey,0.,1.)
 
-        r_xy = params_coulson[2]
+        r_xy = params_init['r_xy']
         r_xy_random,subkey = random_pytrees(r_xy,subkey,1.,3.)
 
-        y_xy = params_coulson[2]
+        y_xy = params_init['y_xy']
         y_xy_random,subkey  = get_y_xy_random(subkey)
 
-        params_coulson = (h_x_random,h_xy_random,r_xy_random,y_xy_random)
-        params = (params_lr,params_coulson)
+        params = get_params_pytrees(alpha_random,beta_random,h_x_random,h_xy_random,r_xy_random,y_xy_random)
 
         f = open(files['f_out'],'a+')
         print('Random initial parameters',file=f)
@@ -220,21 +230,21 @@ def get_init_params(files):
     params_init = get_default_params()
     if os.path.isfile(files['f_w']):
         params = jnp.load(files['f_w'],allow_pickle=True)
-        params_lr,params_coulson = params
-        alpha = params_lr[0]
-        beta = params_lr[1]
-        h_x = params_coulson[0]
-        h_xy = params_coulson[1]
-        r_xy = params_coulson[2]
-        y_xy = params_coulson[3]
-        params_coulson = (h_x,h_xy,r_xy,y_xy)
-        params_lr = (alpha,beta)
+        # params_lr,params_coulson = params
+        alpha = params['alpha']
+        beta = params['beta']
+        h_x = params['h_x']
+        h_xy = params['h_xy']
+        r_xy = params['r_xy']
+        y_xy = params['y_xy']
+
+        params = get_params_pytrees(alpha,beta,h_x,h_xy,r_xy,y_xy)
+
         f = open(files['f_out'],'a+')
         print('Reading parameters from prev. optimization',file=f)
         print('-----------------------------------',file=f)
         f.close()
 
-        params = (params_lr,params_coulson)
         return params
     else:
         f = open(files['f_out'],'a+')
@@ -243,3 +253,19 @@ def get_init_params(files):
         f.close()
         return params_init
     
+def update_h_x(h_x):
+    xc = h_x['C']
+    xc_tree = jax.tree_unflatten(h_x_tree,xc*jnp.ones_like(jnp.array(h_x_flat)))
+    return jax.tree_map(f_dif_pytrees,xc_tree, h_x)
+
+def update_h_xy(h_xy):
+    key = frozenset(['C', 'C'])
+    xcc = h_xy[key]
+    xcc_tree = jax.tree_unflatten(h_xy_tree,xcc*jnp.ones_like(jnp.array(h_xy_flat)))
+    return jax.tree_map(f_div_pytrees,xcc_tree, h_xy)
+
+def update_params_all(params):
+    h_x = h_x = update_h_x(params['h_x'])
+    h_xy = update_h_xy(params['h_xy'])
+    new_params = get_params_pytrees(params['alpha'],params['beta'],h_x,h_xy,params['r_xy'],params['y_xy'])
+    return new_params
