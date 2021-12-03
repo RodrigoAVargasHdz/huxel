@@ -9,8 +9,7 @@ import jax.numpy as jnp
 from jax import random
 from jax import lax,value_and_grad
 
-# from flax import optim
-import optax
+from flax import optim
 
 # from huxel.molecule import myMolecule
 from huxel.data import get_tr_val_data
@@ -74,13 +73,8 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
         optimizer = optimizer.apply_gradient(grad[0])
         return optimizer, loss
 
-    # optimizer = optim.Adam(learning_rate=lr,weight_decay=w_decay).create(params_init)
-    # optimizer = jax.device_put(optimizer)   
-
-    # OPTAX ADAM
-    start_learning_rate = 5e-3
-    schedule = optax.exponential_decay(init_value=start_learning_rate,transition_steps=20,decay_rate=0.1)
-    optimizer = optax.adam(learning_rate=schedule)
+    optimizer = optim.Adam(learning_rate=lr,weight_decay=w_decay).create(params_init)
+    optimizer = jax.device_put(optimizer)   
 
     loss_val0 = 1E16
     f_params = params_init
