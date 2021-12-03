@@ -10,6 +10,7 @@ from jax import random
 from jax import lax,value_and_grad
 
 from flax import optim
+from optax
 
 # from huxel.molecule import myMolecule
 from huxel.data import get_tr_val_data
