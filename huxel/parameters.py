@@ -529,10 +529,11 @@ frozenset(["B", "B"]): 1.590,
         frozenset(["Si", "Si"]): 2.246,
     }
 
+f_div_pytrees = lambda x, y: y/x
+f_dif_pytrees = lambda x, y: y-x
 def update_h_x(h_x):
     xc = h_x['C']
     xc_tree = jax.tree_unflatten(h_x_tree,xc*jnp.ones_like(jnp.array(h_x_flat)))
-    f_dif_pytrees = lambda x, y: y-x
     return jax.tree_map(f_dif_pytrees,xc_tree, h_x)
 
 
@@ -540,5 +541,13 @@ def update_h_xy(h_xy):
     key = frozenset(['C', 'C'])
     xcc = h_xy[key]
     xcc_tree = jax.tree_unflatten(h_xy_tree,xcc*jnp.ones_like(jnp.array(h_xy_flat)))
-    f_div_pytrees = lambda x, y: y/x
     return jax.tree_map(f_div_pytrees,xcc_tree, h_xy)
+
+def update_params_all(params_all):
+    params_lr,params_c = params_all
+    h_x, h_xy, r_xy, y_xy = params_c
+    h_x = update_h_x(h_x)
+    h_xy = update_h_xy(h_xy)
+    params_c = (h_x, h_xy, r_xy, y_xy)
+    params_all = (params_lr,params_c)
+    return params_all
