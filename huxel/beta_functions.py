@@ -26,6 +26,7 @@ def _f_beta(method):
     if method == 'exp':
         def wrapper(*args):
             return _beta_r_exp(*args)
+        return wrapper  
     elif method == 'exp_abs':
         def wrapper(*args):
             return _beta_abs_r_exp(*args)
@@ -33,12 +34,15 @@ def _f_beta(method):
     elif method == 'linear':
         def wrapper(*args):
             return _beta_r_linear(*args)
+        return wrapper  
     elif method == 'linear_abs':
         def wrapper(*args):
             return _beta_abs_r_linear(*args)
+        return wrapper  
     elif method == 'exp_freezeR':
         def wrapper(*args):
             return _beta_r_exp(args[0],lax.stop_gradient(args[1]),args[2],args[3])
+        return wrapper  
     elif method == 'exp_abs_freezeR':
         def wrapper(*args):
             return _beta_abs_r_exp(args[0],lax.stop_gradient(args[1]),args[2],args[3])
@@ -46,6 +50,7 @@ def _f_beta(method):
     elif method == 'linear_freezeR':
         def wrapper(*args):
             return _beta_r_linear(args[0],lax.stop_gradient(args[1]),args[2],args[3])
+        return wrapper  
     elif method == 'linear_abs_freezeR':
         def wrapper(*args):
             return _beta_abs_r_linear(args[0],lax.stop_gradient(args[1]),args[2],args[3])
