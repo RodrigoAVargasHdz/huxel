@@ -15,7 +15,7 @@ from flax import optim
 from huxel.data import get_tr_val_data
 from huxel.beta_functions import _f_beta
 from huxel.huckel import linear_model_pred
-from huxel.parameters import update_h_x,update_h_xy
+from huxel.parameters import update_params_all
 from huxel.utils import get_files_names, batch_to_list_class, get_init_params, get_random_params
 from huxel.utils import print_head, print_tail, get_params_file_itr
 from huxel.utils import save_tr_and_val_loss
@@ -25,12 +25,7 @@ jax.config.update('jax_enable_x64', True)
 
 
 def f_loss_batch(params_tot,batch,f_beta):
-    params_lr,params_c = params_tot
-    h_x, h_xy, r_xy, y_xy = params_c
-    h_x = update_h_x(h_x)
-    h_xy = update_h_xy(h_xy)
-    params_c = (h_x, h_xy, r_xy, y_xy)
-    params_tot = (params_lr,params_c)
+    params_tot = update_params_all(params_tot)
 
     y_pred,z_pred,y_true = linear_model_pred(params_tot,batch,f_beta)
 
@@ -108,7 +103,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
 
         if loss_val < loss_val0:
             loss_val0 = loss_val
-            f_params = params
+            f_params = update_params_all(params)
             jnp.save(files['f_w'],f_params)
             jnp.save(get_params_file_itr(files,epoch),f_params)
 
