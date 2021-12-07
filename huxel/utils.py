@@ -193,6 +193,20 @@ def get_default_params():
                     'y_xy': Y_XY,
     }
     return get_params_pytrees(params_lr[0],params_lr[1],H_X,H_XY,R_XY,Y_XY)
+
+def get_params_bool(params_wdeacay_):
+    '''return params_bool where weight decay will be used. array used in masks in OPTAX'''
+    params = get_default_params()
+    params_bool = params
+    params_flat, params_tree = jax.tree_util.tree_flatten(params)
+    params_bool = jax.tree_util.tree_unflatten(params_tree, jnp.zeros(len(params_flat),dtype=bool)) # all FALSE
+
+    for pb in params_wdeacay_: #ONLY TRUE 
+        print(params[pb])
+        params_bool[pb] = jnp.ones(params[pb].shape,dtype=bool)
+
+    return params_bool
+
 def get_random_params(files,key):
     if not os.path.isfile(files['f_w']): 
         params_init = get_default_params()

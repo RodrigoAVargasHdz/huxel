@@ -16,13 +16,14 @@ import optax
 from huxel.data import get_tr_val_data
 from huxel.beta_functions import _f_beta
 from huxel.huckel import linear_model_pred
-from huxel.utils import get_files_names, batch_to_list_class, get_init_params, get_random_params
+from huxel.utils import get_files_names, get_init_params, get_random_params, get_params_bool
 from huxel.utils import print_head, print_tail, get_params_file_itr, update_params_all
-from huxel.utils import save_tr_and_val_loss
+from huxel.utils import save_tr_and_val_loss, batch_to_list_class
 
 from jax.config import config
 jax.config.update('jax_enable_x64', True)
 
+# label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
 
 def f_loss_batch(params_tot,batch,f_beta):
     params_tot = update_params_all(params_tot)
@@ -61,14 +62,18 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
     else:
         params_init = get_init_params(files)
 
+
+    params_bool_list = ['h_x', 'h_xy', 'y_xy']
+    params_bool = get_params_bool(params_bool_list)
+
     # select the function for off diagonal elements for H
     f_beta = _f_beta(beta)
     # f_loss_batch_ = lambda params,batch: f_loss_batch(params,batch,f_beta)
     grad_fn = value_and_grad(f_loss_batch,argnums=(0,))
 
     # OPTAX ADAM
-    schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
-    optimizer = optax.adam(learning_rate=schedule)
+    # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
+    optimizer = optax.adamw(learning_rate=lr,mask=params_bool)
     opt_state = optimizer.init(params_init)
     params = params_init
     
