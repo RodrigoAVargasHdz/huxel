@@ -70,7 +70,7 @@ def get_params_file_itr(files,itr):
 
 # --------------------------------
 #     HEAD OF FILE
-def print_head(files,N,l,lr,w_decay,n_epochs,batch_size,opt_name,beta):
+def print_head(files,N,l,lr,w_decay,n_epochs,batch_size,opt_name,beta,list_Wdecay):
     f = open(files['f_out'],'a+')
     print('-----------------------------------',file=f)
     print('Starting time', file=f)
@@ -83,6 +83,7 @@ def print_head(files,N,l,lr,w_decay,n_epochs,batch_size,opt_name,beta):
     print('N Epoch = {}'.format(n_epochs),file=f)
     print('Opt method = {}'.format(opt_name),file=f)
     print('f beta: {}'.format(beta),file=f)
+    print('W Decay {}: '.format(list_Wdecay),file=f)
     print('-----------------------------------',file=f)
     f.close()
 #     TAIL OF FILE

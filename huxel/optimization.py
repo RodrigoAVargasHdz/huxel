@@ -36,7 +36,7 @@ def f_loss_batch(params_tot,batch,f_beta):
     diff_y = (y_pred-y_true)**2
     return jnp.mean(diff_y)
 
-def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False):
+def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None,bool_randW=False):
 
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
@@ -48,7 +48,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
     files = get_files_names(n_tr,l,beta,bool_randW,opt_name)
 
     # print info about the optimiation
-    print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name,beta)
+    print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name,beta,list_Wdecay)
 
     # training and validation data
     rng = jax.random.PRNGKey(l)
@@ -65,9 +65,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
     else:
         params_init = get_init_params(files)
 
-
-    params_bool_list = ['h_x', 'h_xy', 'y_xy']
-    params_bool = get_params_bool(params_bool_list)
+    params_bool = get_params_bool(list_Wdecay)
 
     # select the function for off diagonal elements for H
     f_beta = _f_beta(beta)
