@@ -25,6 +25,9 @@ jax.config.update('jax_enable_x64', True)
 
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
 
+def func():
+    return 0
+
 def f_loss_batch(params_tot,batch,f_beta):
     params_tot = update_params_all(params_tot)
     y_pred,z_pred,y_true = linear_model_pred(params_tot,batch,f_beta)

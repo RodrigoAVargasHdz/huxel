@@ -206,9 +206,7 @@ def get_params_bool(params_wdeacay_):
         params_bool[pb] = jnp.ones(params[pb].shape,dtype=bool)
 
     return params_bool
-def func():
-    return 0
-    
+
 def get_random_params(files,key):
     if not os.path.isfile(files['f_w']): 
         params_init = get_default_params()
