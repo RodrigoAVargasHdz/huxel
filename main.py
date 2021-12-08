@@ -18,6 +18,8 @@ def main():
                     help="Examples: -i h_x h_xy r_xy y_xy'")
     
 
+
+
     # bathch_size = #1024#768#512#256#128#64#32
     args = parser.parse_args()
     l = args.l
