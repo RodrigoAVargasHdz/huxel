@@ -195,16 +195,19 @@ def get_default_params():
     }
     return get_params_pytrees(params_lr[0],params_lr[1],H_X,H_XY,R_XY,Y_XY)
 
-def get_params_bool(params_wdeacay_):
+def get_params_bool(params_wdecay_):
     '''return params_bool where weight decay will be used. array used in masks in OPTAX'''
     params = get_default_params()
     params_bool = params
     params_flat, params_tree = jax.tree_util.tree_flatten(params)
     params_bool = jax.tree_util.tree_unflatten(params_tree, jnp.zeros(len(params_flat),dtype=bool)) # all FALSE
 
-    for pb in params_wdeacay_: #ONLY TRUE 
-        print(params[pb])
-        params_bool[pb] = jnp.ones(params[pb].shape,dtype=bool)
+    for pb in params_wdecay_: #ONLY TRUE 
+        if isinstance(params[pb], dict):
+            p_flat, p_tree = jax.tree_util.tree_flatten(params[pb])
+            params_bool[pb] = jax.tree_util.tree_unflatten(p_tree, jnp.ones(len(p_flat),dtype=bool))
+        else:
+            params_bool[pb] = jnp.ones(params[pb].shape,dtype=bool)
 
     return params_bool
 

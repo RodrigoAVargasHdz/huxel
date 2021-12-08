@@ -12,13 +12,11 @@ def main():
     parser.add_argument('--batch_size', type=int, default=16, help='batches')
     parser.add_argument('--job', type=str, default='opt', help='job type')
     parser.add_argument('--beta', type=str, default='c', help='beta function type')
-    parser.add_argument('--randW', type=bool, default=True, help='random initial params')
+    parser.add_argument('--randW', type=bool, default=False, help='random initial params')
     parser.add_argument('-Wdecay', '--item', action='store', dest='alist',
                     type=str, nargs='*', default=['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy'],
                     help="Examples: -i h_x h_xy r_xy y_xy'")
     
-    # ('--Wdecay', type=list, nargs='*',help='params list for WDecay (AdamW')
-    # params_bool_list = ['h_x', 'h_xy', 'y_xy']
 
     # bathch_size = #1024#768#512#256#128#64#32
     args = parser.parse_args()

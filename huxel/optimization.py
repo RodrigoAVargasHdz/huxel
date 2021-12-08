@@ -41,8 +41,8 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
     w_decay = 1E-4
-    n_epochs = 10
-    opt_name = 'Adam'
+    n_epochs = 150
+    opt_name = 'AdamW'
 
     # files
     files = get_files_names(n_tr,l,beta,bool_randW,opt_name)
@@ -81,7 +81,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
         # @jit
     def train_step(params, optimizer_state,batch,f_beta):
         loss, grads = grad_fn(params, batch,f_beta)
-        updates, opt_state = optimizer.update(grads[0], optimizer_state)
+        updates, opt_state = optimizer.update(grads[0], optimizer_state,params)
         return optax.apply_updates(params, updates), opt_state, loss
 
 
