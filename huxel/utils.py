@@ -172,12 +172,12 @@ def get_y_xy_random(key):
     y_xy_random = jax.tree_util.tree_unflatten(y_xy_tree,y_xy_random_flat)
     return y_xy_random, subkey
     
-def get_params_pytrees(alpha,beta,h_x,h_xy,r_xy,y_xy):
+def get_params_pytrees(alpha,beta,h_x,h_xy,y_xy):
     params_init = {'alpha': alpha,
                     'beta': beta,
                     'h_x': h_x,
                     'h_xy': h_xy,
-                    'r_xy': r_xy,
+                    # 'r_xy': r_xy,
                     'y_xy': y_xy,
     }   
     return params_init 
@@ -189,11 +189,11 @@ def get_default_params():
     params_init = {'alpha': params_lr[0],
                     'beta': params_lr[1],
                     'h_x': H_X,
-                    'h_xy': H_XY,
+                    # 'h_xy': H_XY,
                     'r_xy': R_XY,
                     'y_xy': Y_XY,
     }
-    return get_params_pytrees(params_lr[0],params_lr[1],H_X,H_XY,R_XY,Y_XY)
+    return get_params_pytrees(params_lr[0],params_lr[1],H_X,H_XY,Y_XY)
 
 def get_params_bool(params_wdecay_):
     '''return params_bool where weight decay will be used. array used in masks in OPTAX'''
@@ -227,13 +227,13 @@ def get_random_params(files,key):
         h_xy = params_init['h_xy']
         h_xy_random,subkey = random_pytrees(h_xy,subkey,0.,1.)
 
-        r_xy = params_init['r_xy']
-        r_xy_random,subkey = random_pytrees(r_xy,subkey,1.,3.)
+        # r_xy = params_init['r_xy']
+        # r_xy_random,subkey = random_pytrees(r_xy,subkey,1.,3.)
 
         y_xy = params_init['y_xy']
         y_xy_random,subkey  = get_y_xy_random(subkey)
 
-        params = get_params_pytrees(alpha_random,beta_random,h_x_random,h_xy_random,r_xy_random,y_xy_random)
+        params = get_params_pytrees(alpha_random,beta_random,h_x_random,h_xy_random,y_xy_random)#r_xy_random,
 
         f = open(files['f_out'],'a+')
         print('Random initial parameters',file=f)
@@ -253,10 +253,10 @@ def get_init_params(files):
         beta = params['beta']
         h_x = params['h_x']
         h_xy = params['h_xy']
-        r_xy = params['r_xy']
+        # r_xy = params['r_xy']
         y_xy = params['y_xy']
 
-        params = get_params_pytrees(alpha,beta,h_x,h_xy,r_xy,y_xy)
+        params = get_params_pytrees(alpha,beta,h_x,h_xy,y_xy)
 
         f = open(files['f_out'],'a+')
         print('Reading parameters from prev. optimization',file=f)
@@ -285,5 +285,5 @@ def update_h_xy(h_xy):
 def update_params_all(params):
     h_x = h_x = update_h_x(params['h_x'])
     h_xy = update_h_xy(params['h_xy'])
-    new_params = get_params_pytrees(params['alpha'],params['beta'],h_x,h_xy,params['r_xy'],params['y_xy'])
+    new_params = get_params_pytrees(params['alpha'],params['beta'],params['h_x'],params['h_xy'],params['y_xy'])
     return new_params

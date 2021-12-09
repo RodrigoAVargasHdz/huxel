@@ -7,26 +7,26 @@ from jax.tree_util import tree_flatten, tree_unflatten, tree_multimap
 from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
 
-def linear_model_pred(params,batch,f_beta):
+def linear_model_pred(params,params_r,batch,f_beta):
     # params_lr, params = params_tot
     # alpha,beta = params_lr
 
-    z_pred,y_true = f_homo_lumo_gap_batch(params,batch,f_beta)
+    z_pred,y_true = f_homo_lumo_gap_batch(params,params_r,batch,f_beta)
     y_pred = params['beta']*z_pred + params['alpha']
     return y_pred,z_pred,y_true
 
-def f_homo_lumo_gap_batch(params,batch,f_beta):
+def f_homo_lumo_gap_batch(params,params_r,batch,f_beta):
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
-        yi,_ = f_homo_lumo_gap(params,m,f_beta)
+        yi,_ = f_homo_lumo_gap(params,params_r,m,f_beta)
         y_pred = jnp.append(y_pred,yi)   
         y_true = jnp.append(y_true,m.homo_lumo_grap_ref)   
     return y_pred[1:],y_true[1:]
 
-def f_homo_lumo_gap(params,molecule,f_beta):
+def f_homo_lumo_gap(params,params_r,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule
-    h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
+    h_m,electrons = _construct_huckel_matrix(params,params_r,molecule,f_beta)
     e_,_ = _solve(h_m)
 
     n_orbitals = h_m.shape[0]
@@ -39,7 +39,7 @@ def f_homo_lumo_gap(params,molecule,f_beta):
     val = lumo_energy - homo_energy
     return val,(h_m,e_)
 # -------
-def _construct_huckel_matrix(params,molecule,f_beta):
+def _construct_huckel_matrix(params,params_r,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule 
     atom_types = molecule.atom_types
     conectivity_matrix = molecule.conectivity_matrix
@@ -47,8 +47,6 @@ def _construct_huckel_matrix(params,molecule,f_beta):
     # atom_types = molecule['atom_types']
     # conectivity_matrix = molecule['conectivity_matrix']
     # h_x, h_xy, r_xy, y_xy = params
-    h_x = params['h_x']
-
 
     huckel_matrix = jnp.zeros_like(conectivity_matrix,dtype=jnp.float32)
     # off diagonal terms
@@ -57,7 +55,7 @@ def _construct_huckel_matrix(params,molecule,f_beta):
         atom_type_j = atom_types[j]
         key = frozenset([atom_type_i, atom_type_j])
 
-        beta_ = f_beta(params['h_xy'][key],params['r_xy'][key],params['y_xy'][key],dm[i,j])
+        beta_ = f_beta(params['h_xy'][key],params_r[key],params['y_xy'][key],dm[i,j])
         
         huckel_matrix = huckel_matrix.at[i,j].set(beta_)
 

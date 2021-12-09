@@ -9,8 +9,12 @@ import jax.numpy as jnp
 from jax import random
 from jax import lax,value_and_grad
 
-from flax import optim
+# from flax import optim
 import optax
+
+from jaxopt import implicit_diff
+from jaxopt import linear_solve
+from jaxopt import OptaxSolver
 
 # from huxel.molecule import myMolecule
 from huxel.data import get_tr_val_data
@@ -19,18 +23,18 @@ from huxel.huckel import linear_model_pred
 from huxel.utils import get_files_names, get_init_params, get_random_params, get_params_bool
 from huxel.utils import print_head, print_tail, get_params_file_itr, update_params_all
 from huxel.utils import save_tr_and_val_loss, batch_to_list_class
+from huxel.parameters import R_XY
 
 from jax.config import config
 jax.config.update('jax_enable_x64', True)
 
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
 
-def func():
-    return 0
+def f_loss_batch(params,params_r,data,f_beta):
+    data = batch_to_list_class(data)
 
-def f_loss_batch(params_tot,batch,f_beta):
-    params_tot = update_params_all(params_tot)
-    y_pred,z_pred,y_true = linear_model_pred(params_tot,batch,f_beta)
+    params = update_params_all(params)
+    y_pred,z_pred,y_true = linear_model_pred(params,params_r,data,f_beta)
 
     # diff_y = jnp.abs(y_pred-y_true)
     diff_y = (y_pred-y_true)**2
@@ -40,8 +44,8 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
 
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
-    w_decay = 1E-4
-    n_epochs = 150
+    w_decay = 5E-4
+    n_epochs = 50
     opt_name = 'AdamW'
 
     # files
@@ -57,24 +61,48 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     D_tr,D_val,batches,n_batches,subkey = get_tr_val_data(files,n_tr,subkey,batch_size)
 
     # change D-val for list of myMolecules
-    batch_val = batch_to_list_class(D_val)
+    # batch_val = batch_to_list_class(D_val)
 
     # initialize parameters
     if bool_randW:
         params_init,subkey = get_random_params(files,subkey)
     else:
-        params_init = get_init_params(files)
+        params_init = get_init_params(files) 
+    
+    params_r = R_XY
+    params = params_init.copy()
 
     params_bool = get_params_bool(list_Wdecay)
-
     # select the function for off diagonal elements for H
     f_beta = _f_beta(beta)
-    # f_loss_batch_ = lambda params,batch: f_loss_batch(params,batch,f_beta)
-    grad_fn = value_and_grad(f_loss_batch,argnums=(0,))
 
+    _f_loss_inner = lambda w,l,data: f_loss_batch(w,l,data,f_beta)
+
+    def print_accuracy(params,state,l,*args, **kwargs):
+
+        loss_val = f_loss_batch(params,l,D_val,f_beta)     
+        f = open(files['f_out'],'a+')
+        print(state.iter_num,loss_val,file=f)  #
+        f.close()
+        return params, state
+    
+    solver = OptaxSolver(opt=optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool), 
+                        fun=_f_loss_inner, maxiter=n_epochs,
+                        pre_update=print_accuracy) # 
+
+    state = solver.init_state(params)
+
+    params, state = solver.run_iterator(
+        init_params=params, iterator=batches, l=params_r)
+
+    f_params = update_params_all(params)
+    jnp.save(files['f_w'],f_params)
+
+    assert 0
+    '''
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
-    optimizer = optax.adamw(learning_rate=lr,mask=params_bool)
+    optimizer = optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool)
     opt_state = optimizer.init(params_init)
     params = params_init
     
@@ -117,6 +145,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
 
     print_tail(files)
+    '''
 
 def main():
     parser = argparse.ArgumentParser(description='opt overlap NN')
@@ -124,7 +153,7 @@ def main():
     parser.add_argument('--l', type=int, default=0, help='label')
     parser.add_argument('--lr', type=float, default=2E-3, help='learning rate')
     parser.add_argument('--batch_size', type=int, default=16, help='batches')
-    parser.add_argument('--beta', type=str, default='exp_freezeR', help='beta function')
+    parser.add_argument('--beta', type=str, default='exp', help='beta function')
     parser.add_argument('--randW', type=bool, default=False, help='random initial params')
 
     # bathch_size = #1024#768#512#256#128#64#32
