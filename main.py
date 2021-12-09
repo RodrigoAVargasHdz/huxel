@@ -6,17 +6,17 @@ from huxel.prediction import _pred
 
 def main():
     parser = argparse.ArgumentParser(description='opt overlap NN')
-    parser.add_argument('--N', type=int, default=10, help='traning data')
+    parser.add_argument('--N', type=int, default=5, help='traning data')
     parser.add_argument('--l', type=int, default=0, help='label')
     parser.add_argument('--lr', type=float, default=2E-3, help='learning rate')
     parser.add_argument('--batch_size', type=int, default=16, help='batches')
     parser.add_argument('--job', type=str, default='opt', help='job type')
-    parser.add_argument('--beta', type=str, default='c', help='beta function type')
+    parser.add_argument('--beta', type=str, default='exp', help='beta function type')
     parser.add_argument('--randW', type=bool, default=False, help='random initial params')
     parser.add_argument('-Wdecay', '--item', action='store', dest='alist',
-                    type=str, nargs='*', default=['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy'],
+                    type=str, nargs='*', default=['alpha', 'beta', 'h_x', 'h_xy',  'y_xy'],
                     help="Examples: -i h_x h_xy r_xy y_xy'")
-    
+     # removed 'r_xy',
 
 
 
