@@ -17,7 +17,7 @@ from jax.config import config
 jax.config.update('jax_enable_x64', True)
 
 def _pred(n_tr=50,l=0,beta='exp',bool_randW=False):
-    opt_name='Adam'
+    opt_name='AdamW'
     # files
     files = get_files_names(n_tr,l,beta,bool_randW,opt_name)
 
@@ -28,7 +28,7 @@ def _pred(n_tr=50,l=0,beta='exp',bool_randW=False):
     #     assert 0
 
     # initialize parameters
-    params_init = get_init_params(files)
+    params, params_r = get_init_params(files)
     # params0 = get_default_params()
 
     # get data
@@ -38,7 +38,7 @@ def _pred(n_tr=50,l=0,beta='exp',bool_randW=False):
     f_beta = _f_beta(beta)
 
     # prediction
-    y_pred,z_pred,y_true = linear_model_pred(params_init,D,f_beta)
+    y_pred,z_pred,y_true = linear_model_pred(params, params_r,D,f_beta)
 
     # prediction original parameters
     # params0 = get_default_params()

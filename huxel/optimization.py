@@ -99,6 +99,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     f_params = params
     loss_tr_ = []
     loss_val_ = []
+    loss_val0 = 1E6
     for epoch in range(n_epochs+1):
         start_time_epoch = time.time()
         loss_val_epoch = []
