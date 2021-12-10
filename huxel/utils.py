@@ -248,13 +248,14 @@ def get_init_params(files):
     params_init = get_default_params()
     if os.path.isfile(files['f_w']):
         params = jnp.load(files['f_w'],allow_pickle=True)
+        print(files['f_w'])
         # params_lr,params_coulson = params
-        alpha = params['alpha']
-        beta = params['beta']
-        h_x = params['h_x']
-        h_xy = params['h_xy']
-        r_xy = params['r_xy']
-        y_xy = params['y_xy']
+        alpha = params.item()['alpha']
+        beta = params.item()['beta']
+        h_x = params.item()['h_x']
+        h_xy = params.item()['h_xy']
+        r_xy = params.item()['r_xy']
+        y_xy = params.item()['y_xy']
 
         params = get_params_pytrees(alpha,beta,h_x,h_xy,r_xy,y_xy)
 
