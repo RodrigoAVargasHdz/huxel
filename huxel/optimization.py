@@ -17,7 +17,7 @@ from jaxopt import linear_solve
 from jaxopt import OptaxSolver
 
 # from huxel.molecule import myMolecule
-from huxel.data import get_tr_val_data
+from huxel.data import get_tr_val_data, get_batches
 from huxel.beta_functions import _f_beta
 from huxel.huckel import linear_model_pred
 from huxel.utils import get_files_names, get_init_params, get_random_params, get_params_bool
@@ -31,7 +31,7 @@ jax.config.update('jax_enable_x64', True)
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
 
 def f_loss_batch(params,params_r,data,f_beta):
-    data = batch_to_list_class(data)
+    # data = batch_to_list_class(data)
 
     params = update_params_all(params)
     y_pred,z_pred,y_true = linear_model_pred(params,params_r,data,f_beta)
@@ -45,7 +45,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
     w_decay = 5E-4
-    n_epochs = 150
+    n_epochs = 50
     opt_name = 'AdamW'
 
     # files
@@ -54,97 +54,75 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     # print info about the optimiation
     print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name,beta,list_Wdecay)
 
+    f_beta = _f_beta(beta)
+
     # training and validation data
     rng = jax.random.PRNGKey(l)
     rng, subkey = jax.random.split(rng)
 
     D_tr,D_val,batches,n_batches,subkey = get_tr_val_data(files,n_tr,subkey,batch_size)
+    batch_val_size = batch_size
+    batches_val, n_batches_val = get_batches(D_val,batch_val_size,subkey)
+    _, subkey = jax.random.split(subkey)
 
-    # change D-val for list of myMolecules
-    # batch_val = batch_to_list_class(D_val)
 
-    # initialize parameters
-    if bool_randW:
-        params_init,subkey = get_random_params(files,subkey)
-    else:
-        params_init = get_init_params(files) 
+    f_loss = lambda params,params_r,data: f_loss_batch(params,params_r,data,f_beta)
+
+    params_init = get_init_params(files) 
     params_r = R_XY
     params = params_init.copy()
 
-    params_bool = get_params_bool(list_Wdecay)
-    # select the function for off diagonal elements for H
-    f_beta = _f_beta(beta)
+    def step_in(opt_in, params,params_r, state, data):
+        loss_tr, grad = value_and_grad(f_loss)(params,params_r, data)
+        updates, state = opt_in.update(grad, state, params)
+        params = optax.apply_updates(params, updates)
+        return params, state, loss_tr
 
-    _f_loss_inner = lambda w,l,data: f_loss_batch(w,l,data,f_beta)
+    def step_out(opt_out,opt_in,params_r, params,state_out,state_in,data_out):
+        loss_tr_epoch = []
+        for _ in range(n_batches):
+            batch_in = batch_to_list_class(next(batches))
+            params,state_in,loss_tr = step_in(opt_in,params,params_r,state_in,batch_in)
+            loss_tr_epoch.append(loss_tr)
+        loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
+        loss_val, grad = value_and_grad(f_loss,argnums=1)(params,params_r, data_out)
+        updates, state_out = opt_out.update(grad, state_out, params_r)
+        params_r = optax.apply_updates(params_r, updates)
+        return params_r, state_out, (loss_val,loss_tr_mean), (params,state_in,opt_in,opt_out)
 
-    def print_accuracy(params,state,l,*args, **kwargs):
-
-        loss_val = f_loss_batch(params,l,D_val,f_beta)     
-        f = open(files['f_out'],'a+')
-        print(state.iter_num,loss_val,file=f)  #
-        f.close()
-        return params, state
-    
-    solver = OptaxSolver(opt=optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool), 
-                        fun=_f_loss_inner, maxiter=n_epochs,
-                        pre_update=print_accuracy) # 
-
-    state = solver.init_state(params)
-
-    params, state = solver.run_iterator(
-        init_params=params, iterator=batches, l=params_r)
-
-    f_params = update_params_all(params)
-    jnp.save(files['f_w'],f_params)
-
-    assert 0
-    '''
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
-    optimizer = optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool)
-    opt_state = optimizer.init(params_init)
-    params = params_init
+    optimizer_in = optax.adamw(learning_rate=lr,weight_decay=w_decay)
+    opt_in_state = optimizer_in.init(params)
     
-        # @jit
-    def train_step(params, optimizer_state,batch,f_beta):
-        loss, grads = grad_fn(params, batch,f_beta)
-        updates, opt_state = optimizer.update(grads[0], optimizer_state,params)
-        return optax.apply_updates(params, updates), opt_state, loss
+    optimizer_out = optax.adamw(learning_rate=lr,weight_decay=0.)
+    opt_out_state = optimizer_out.init(params_r)
 
-
-    loss_val0 = 1E16
     f_params = params_init
     loss_tr_ = []
     loss_val_ = []
     for epoch in range(n_epochs+1):
         start_time_epoch = time.time()
-        loss_tr_epoch = []
-        for _ in range(n_batches):
-            batch = batch_to_list_class(next(batches))
-            params, opt_state, loss_tr = train_step(params,opt_state, batch,f_beta)
-            loss_tr_epoch.append(loss_tr)
+        loss_val_epoch = []
+        for _ in range(n_batches_val):
+            batch = batch_to_list_class(next(batches_val))
+            params_r, opt_out_state, (loss_val,loss_tr_mean), (params,opt_in_state ,optimizer_in,optimizer_out) = step_out(optimizer_out, optimizer_in,params_r, params,opt_out_state,opt_in_state,batch)
+            loss_val_epoch.append(loss_val)
 
-        loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
-        loss_val = f_loss_batch(params,batch_val,f_beta)
-
-        f = open(files['f_out'],'a+')
+        loss_val_mean = jnp.mean(jnp.asarray(loss_val_epoch).ravel())
         time_epoch = time.time() - start_time_epoch
-        print(epoch,loss_tr,loss_val,time_epoch,file=f)   
-        f.close()
-
+        print(epoch,loss_tr_mean,loss_val,time_epoch)   
+    
         loss_tr_.append(loss_tr_mean)
         loss_val_.append(loss_val)
 
-        if loss_val < loss_val0:
-            loss_val0 = loss_val
-            f_params = update_params_all(params)
-            jnp.save(files['f_w'],f_params)
-            jnp.save(get_params_file_itr(files,epoch),f_params)
+    #     if loss_val < loss_val0:
+    #         loss_val0 = loss_val
+    #         f_params = update_params_all(params)
+    #         jnp.save(files['f_w'],f_params)
+    #         jnp.save(get_params_file_itr(files,epoch),f_params)
 
-    save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
-
-    print_tail(files)
-    '''
+    # save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
 
 def main():
     parser = argparse.ArgumentParser(description='opt overlap NN')

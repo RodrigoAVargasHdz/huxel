@@ -2,7 +2,7 @@ import time
 import argparse
 
 from huxel.optimization import _optimization as _opt
-# from huxel.optimization_ml import _optimization as _optml
+from huxel.optimization_ml import _optimization as _optml
 from huxel.prediction import _pred
 
 def main():
@@ -32,10 +32,11 @@ def main():
 
     if job_ == 'opt':
         _opt(n_tr,batch_size,lr,l,beta_,list_Wdecay,bool_randW)
+    elif job_ == 'optml':
+        _optml(n_tr,batch_size,lr,l,beta_,list_Wdecay,bool_randW)
     elif job_ == 'pred':
         _pred(n_tr,l,beta_,bool_randW)
-    # if job_ == 'optml':
-        # _optml(n_tr,batch_size,lr,l,beta_,list_Wdecay,bool_randW)
+
 
 
 
