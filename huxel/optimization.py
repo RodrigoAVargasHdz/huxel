@@ -61,16 +61,14 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     rng, subkey = jax.random.split(rng)
 
     D_tr,D_val,batches,n_batches,subkey = get_tr_val_data(files,n_tr,subkey,batch_size)
+    batch_val = batch_to_list_class(D_val)
     batch_val_size = batch_size
     batches_val, n_batches_val = get_batches(D_val,batch_val_size,subkey)
     _, subkey = jax.random.split(subkey)
 
-
     f_loss = lambda params,params_r,data: f_loss_batch(params,params_r,data,f_beta)
 
-    params_init = get_init_params(files) 
-    params_r = R_XY
-    params = params_init.copy()
+    params,params_r = get_init_params(files) 
 
     def step_in(opt_in, params,params_r, state, data):
         loss_tr, grad = value_and_grad(f_loss)(params,params_r, data)
@@ -98,7 +96,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     optimizer_out = optax.adamw(learning_rate=lr,weight_decay=0.)
     opt_out_state = optimizer_out.init(params_r)
 
-    f_params = params_init
+    f_params = params
     loss_tr_ = []
     loss_val_ = []
     for epoch in range(n_epochs+1):
@@ -109,20 +107,26 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
             params_r, opt_out_state, (loss_val,loss_tr_mean), (params,opt_in_state ,optimizer_in,optimizer_out) = step_out(optimizer_out, optimizer_in,params_r, params,opt_out_state,opt_in_state,batch)
             loss_val_epoch.append(loss_val)
 
-        loss_val_mean = jnp.mean(jnp.asarray(loss_val_epoch).ravel())
+        loss_val_epoch_mean = jnp.mean(jnp.asarray(loss_val_epoch).ravel())
         time_epoch = time.time() - start_time_epoch
-        print(epoch,loss_tr_mean,loss_val,time_epoch)   
+
+        loss_val_tot = f_loss_batch(params,params_r,batch_val,f_beta)
+
+        f = open(files['f_out'],'a+')
+        print(epoch,loss_tr_mean,loss_val_epoch_mean,loss_val_tot,time_epoch,file=f)   
+        f.close()
     
         loss_tr_.append(loss_tr_mean)
-        loss_val_.append(loss_val)
+        loss_val_.append(loss_val_tot)
 
-    #     if loss_val < loss_val0:
-    #         loss_val0 = loss_val
-    #         f_params = update_params_all(params)
-    #         jnp.save(files['f_w'],f_params)
-    #         jnp.save(get_params_file_itr(files,epoch),f_params)
+        if loss_val_epoch_mean < loss_val0:
+            loss_val0 = loss_val_epoch_mean
+            f_params = update_params_all(params)
+            f_params['r_xy'] = params_r
+            jnp.save(files['f_w'],f_params)
+            jnp.save(get_params_file_itr(files,epoch),f_params)
 
-    # save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
+    save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
 
 def main():
     parser = argparse.ArgumentParser(description='opt overlap NN')

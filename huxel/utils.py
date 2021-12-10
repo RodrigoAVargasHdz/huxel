@@ -246,15 +246,16 @@ def get_random_params(files,key):
 
 def get_init_params(files):
     params_init = get_default_params()
+    params_r = R_XY
     if os.path.isfile(files['f_w']):
         params = jnp.load(files['f_w'],allow_pickle=True)
         # params_lr,params_coulson = params
-        alpha = params['alpha']
-        beta = params['beta']
-        h_x = params['h_x']
-        h_xy = params['h_xy']
-        # r_xy = params['r_xy']
-        y_xy = params['y_xy']
+        alpha = params.item()['alpha']
+        beta = params.item()['beta']
+        h_x = params.item()['h_x']
+        h_xy = params.item()['h_xy']
+        r_xy = params.item()['r_xy']
+        y_xy = params.item()['y_xy']
 
         params = get_params_pytrees(alpha,beta,h_x,h_xy,y_xy)
 
@@ -263,13 +264,13 @@ def get_init_params(files):
         print('-----------------------------------',file=f)
         f.close()
 
-        return params
+        return params,r_xy
     else:
         f = open(files['f_out'],'a+')
         print('Standard initial parameters',file=f)
         print('-----------------------------------',file=f)
         f.close()
-        return params_init
+        return params_init, params_r
     
 def update_h_x(h_x):
     xc = h_x['C']
