@@ -2,7 +2,6 @@ import time
 import argparse
 
 from huxel.optimization import _optimization as _opt
-from huxel.optimization_ml import _optimization as _optml
 from huxel.prediction import _pred
 
 def main():
@@ -11,7 +10,7 @@ def main():
     parser.add_argument('--l', type=int, default=10, help='label')
     parser.add_argument('--lr', type=float, default=2E-3, help='learning rate')
     parser.add_argument('--batch_size', type=int, default=16, help='batches')
-    parser.add_argument('--job', type=str, default='optml', help='job type')
+    parser.add_argument('--job', type=str, default='opt', help='job type')
     parser.add_argument('--beta', type=str, default='exp', help='beta function type')
     parser.add_argument('--randW', type=bool, default=False, help='random initial params')
     parser.add_argument('-Wdecay', '--item', action='store', dest='alist',
@@ -32,8 +31,6 @@ def main():
 
     if job_ == 'opt':
         _opt(n_tr,batch_size,lr,l,beta_,list_Wdecay,bool_randW)
-    elif job_ == 'optml':
-        _optml(n_tr,batch_size,lr,l,beta_,list_Wdecay,bool_randW)
     elif job_ == 'pred':
         _pred(n_tr,l,beta_,bool_randW)
 
