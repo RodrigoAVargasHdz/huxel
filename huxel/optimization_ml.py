@@ -40,7 +40,62 @@ def f_loss_batch(params,params_r,data,f_beta):
     diff_y = (y_pred-y_true)**2
     return jnp.mean(diff_y)
 
-def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None,bool_randW=False):
+def _optimization_old(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None,bool_randW=False):
+
+    # optimization parameters
+    # if n_tr < 100 is considered as porcentage of the training data 
+    w_decay = 5E-4
+    n_epochs = 50
+    opt_name = 'AdamW'
+
+    # files
+    files = get_files_names(n_tr,l,beta,bool_randW,opt_name)
+
+    # print info about the optimiation
+    print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name,beta,list_Wdecay)
+
+    f_beta = _f_beta(beta)
+
+    # training and validation data
+    rng = jax.random.PRNGKey(l)
+    rng, subkey = jax.random.split(rng)
+
+    D_tr,D_val,batches,n_batches,subkey = get_tr_val_data(files,n_tr,subkey,batch_size)
+
+    f_loss = lambda params,params_r,data: f_loss_batch(params,params_r,data,f_beta)
+
+    params_init = get_init_params(files) 
+    params_r = R_XY
+    params = params_init.copy()
+
+    def step_in(opt_in, params,params_r, state, data):
+        loss_tr, grad = value_and_grad(f_loss)(params,params_r, data)
+        updates, state = opt_in.update(grad, state, params)
+        params = optax.apply_updates(params, updates)
+        return params, state, loss_tr
+
+    def step_out(opt_out,opt_in,params_r, params,state_out,state_in,data_in,data_out):
+        params,state_in,loss_tr = state_in(opt_in,params,params_r,state_in,data_in)
+        
+        loss_val, grad = value_and_grad(f_loss,argnums=1)(params,params_r, data_out)
+        updates, state_out = opt_out.update(grad, state_out, params_r)
+        params_r = optax.apply_updates(params_r, updates)
+        return params_r, state_out, (loss_val,loss_tr), (params,state_in,opt_in,opt_out)
+
+    # OPTAX ADAM
+    # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
+    optimizer_in = optax.adamw(learning_rate=lr,weight_decay=w_decay)
+    opt_in_state = optimizer_in.init(params)
+    
+    optimizer_out = optax.adamw(learning_rate=lr,weight_decay=0.)
+    opt_out_state = optimizer_out.init(params_r)
+
+    for epoch in range(n_epochs+1):
+        start_time_epoch = time.time()
+        loss_tr_epoch = []
+        for _ in range(n_batches):
+
+def _optimization_old(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None,bool_randW=False):
 
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
@@ -75,42 +130,31 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     # select the function for off diagonal elements for H
     f_beta = _f_beta(beta)
 
-    _f_loss_inner = lambda w,l,data: f_loss_batch(w,l,data,f_beta)
+    _f_loss_inner = lambda w,w_r,data: f_loss_batch(w,w_r,data,f_beta)
+    grad_fn_w = value_and_grad(_f_loss_inner,argnums=1)
+    grad_fn_wr = value_and_grad(_f_loss_inner,argnums=1)
 
-    def print_accuracy(params,state,l,*args, **kwargs):
-
-        loss_val = f_loss_batch(params,l,D_val,f_beta)     
-        f = open(files['f_out'],'a+')
-        print(state.iter_num,loss_val,file=f)  #
-        f.close()
-        return params, state
-    
-    solver = OptaxSolver(opt=optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool), 
-                        fun=_f_loss_inner, maxiter=n_epochs,
-                        pre_update=print_accuracy) # 
-
-    state = solver.init_state(params)
-
-    params, state = solver.run_iterator(
-        init_params=params, iterator=batches, l=params_r)
-
-    f_params = update_params_all(params)
-    jnp.save(files['f_w'],f_params)
-
-    assert 0
-    '''
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
-    optimizer = optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool)
-    opt_state = optimizer.init(params_init)
-    params = params_init
+    optimizer_in = optax.adamw(learning_rate=lr,weight_decay=w_decay,mask=params_bool)
+    opt_inn_state = optimizer_in.init(params)
     
-        # @jit
-    def train_step(params, optimizer_state,batch,f_beta):
-        loss, grads = grad_fn(params, batch,f_beta)
-        updates, opt_state = optimizer.update(grads[0], optimizer_state,params)
+    optimizer_out = optax.adamw(learning_rate=lr,weight_decay=w_decay)
+    opt_out_state = optimizer_out.init(params_r)
+
+    # @jit
+    def train_in_step(params, params_r, optimizer_state_in,batch,f_beta):
+        loss, grads = grad_fn_w(params,params_r,batch,f_beta)
+        updates, opt_state = optimizer_in.update(grads[0], optimizer_state_in,params)
         return optax.apply_updates(params, updates), opt_state, loss
 
+
+
+
+    def train_out_step(params, params_r, optimizer_state_out,optimizer_state_out,batch,f_beta):
+        loss, grads = grad_fn_w(params,params_r,batch,f_beta)
+        updates, opt_state = optimizer_in.update(grads[0], optimizer_state_in,params)
+        return optax.apply_updates(params, updates), opt_state, loss
 
     loss_val0 = 1E16
     f_params = params_init
@@ -144,7 +188,6 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
 
     print_tail(files)
-    '''
 
 def main():
     parser = argparse.ArgumentParser(description='opt overlap NN')

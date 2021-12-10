@@ -45,7 +45,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
     w_decay = 5E-4
-    n_epochs = 50
+    n_epochs = 150
     opt_name = 'AdamW'
 
     # files
@@ -68,7 +68,6 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
         params_init,subkey = get_random_params(files,subkey)
     else:
         params_init = get_init_params(files) 
-    
     params_r = R_XY
     params = params_init.copy()
 
