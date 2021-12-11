@@ -128,6 +128,7 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None
             jnp.save(get_params_file_itr(files,epoch),f_params)
 
     save_tr_and_val_loss(files,loss_tr_,loss_val_,n_epochs+1)
+    print_tail(files)
 
 def main():
     parser = argparse.ArgumentParser(description='opt overlap NN')
