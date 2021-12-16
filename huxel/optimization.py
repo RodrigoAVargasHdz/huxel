@@ -10,42 +10,45 @@ from jax import random
 from jax import lax,value_and_grad
 
 from flax import optim
+import optax
 
 # from huxel.molecule import myMolecule
 from huxel.data import get_tr_val_data
 from huxel.beta_functions import _f_beta
 from huxel.huckel import linear_model_pred
-from huxel.parameters import update_params_all
-from huxel.utils import get_files_names, batch_to_list_class, get_init_params, get_random_params
-from huxel.utils import print_head, print_tail, get_params_file_itr
-from huxel.utils import save_tr_and_val_loss
+from huxel.utils import get_files_names, get_init_params, get_random_params, get_params_bool
+from huxel.utils import print_head, print_tail, get_params_file_itr, update_params_all
+from huxel.utils import save_tr_and_val_loss, batch_to_list_class
 
 from jax.config import config
 jax.config.update('jax_enable_x64', True)
 
+# label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
+
+def func():
+    return 0
 
 def f_loss_batch(params_tot,batch,f_beta):
     params_tot = update_params_all(params_tot)
-
     y_pred,z_pred,y_true = linear_model_pred(params_tot,batch,f_beta)
 
     # diff_y = jnp.abs(y_pred-y_true)
     diff_y = (y_pred-y_true)**2
     return jnp.mean(diff_y)
 
-def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False):
+def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',list_Wdecay=None,bool_randW=False):
 
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data 
     w_decay = 1E-4
-    n_epochs = 50
-    opt_name = 'Adam'
+    n_epochs = 150
+    opt_name = 'AdamW'
 
     # files
     files = get_files_names(n_tr,l,beta,bool_randW,opt_name)
 
     # print info about the optimiation
-    print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name,beta)
+    print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name,beta,list_Wdecay)
 
     # training and validation data
     rng = jax.random.PRNGKey(l)
@@ -62,19 +65,25 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
     else:
         params_init = get_init_params(files)
 
+    params_bool = get_params_bool(list_Wdecay)
+
     # select the function for off diagonal elements for H
     f_beta = _f_beta(beta)
     # f_loss_batch_ = lambda params,batch: f_loss_batch(params,batch,f_beta)
+    grad_fn = value_and_grad(f_loss_batch,argnums=(0,))
 
-    # @jit
-    def train_step(optimizer, batch,f_beta):
-        grad_fn = value_and_grad(f_loss_batch,argnums=(0,))
-        loss, grad = grad_fn(optimizer.target, batch,f_beta)
-        optimizer = optimizer.apply_gradient(grad[0])
-        return optimizer, loss
+    # OPTAX ADAM
+    # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
+    optimizer = optax.adamw(learning_rate=lr,mask=params_bool)
+    opt_state = optimizer.init(params_init)
+    params = params_init
+    
+        # @jit
+    def train_step(params, optimizer_state,batch,f_beta):
+        loss, grads = grad_fn(params, batch,f_beta)
+        updates, opt_state = optimizer.update(grads[0], optimizer_state,params)
+        return optax.apply_updates(params, updates), opt_state, loss
 
-    optimizer = optim.Adam(learning_rate=lr,weight_decay=w_decay).create(params_init)
-    optimizer = jax.device_put(optimizer)   
 
     loss_val0 = 1E16
     f_params = params_init
@@ -85,12 +94,10 @@ def _optimization(n_tr=50,batch_size=100,lr=2E-3,l=0,beta='exp',bool_randW=False
         loss_tr_epoch = []
         for _ in range(n_batches):
             batch = batch_to_list_class(next(batches))
-            optimizer, loss_tr = train_step(optimizer, batch,f_beta)
+            params, opt_state, loss_tr = train_step(params,opt_state, batch,f_beta)
             loss_tr_epoch.append(loss_tr)
 
         loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
-        params = optimizer.target
-
         loss_val = f_loss_batch(params,batch_val,f_beta)
 
         f = open(files['f_out'],'a+')

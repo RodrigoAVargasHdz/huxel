@@ -17,7 +17,7 @@ from jax.config import config
 jax.config.update('jax_enable_x64', True)
 
 def _pred(n_tr=50,l=0,beta='exp',bool_randW=False):
-    opt_name='Adam'
+    opt_name='AdamW'
     # files
     files = get_files_names(n_tr,l,beta,bool_randW,opt_name)
 
