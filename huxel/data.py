@@ -8,10 +8,6 @@ import jax.numpy as jnp
 from huxel.utils import save_tr_and_val_data
 
 
-def f():
-    return 0
-
-
 def get_raw_data():
     return jnp.load(
         "huxel/data/gdb13_list_100000_training.npy", allow_pickle=True
