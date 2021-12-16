@@ -10,8 +10,11 @@ from huxel.utils import save_tr_and_val_data
 
 def get_raw_data():
     return jnp.load(
-        "huxel/data/gdb13_list_100000_training.npy", allow_pickle=True
-    ), jnp.load("huxel/data/gdb13_list_100000_test.npy", allow_pickle=True)
+        "/h/rvargas/huxel_data_kjorner/gdb13_list_100000_training.npy",
+        allow_pickle=True,
+    ), jnp.load(
+        "/h/rvargas/huxel_data_kjorner/gdb13_list_100000_test.npy", allow_pickle=True
+    )
 
 
 def get_batches(Dtr, batch_size, key):
