@@ -1,29 +1,32 @@
 import jax
 import jax.numpy as jnp
 
+import chex
 
+
+@chex.dataclass
 class myMolecule:
-    '''
+    """
     Basic class for individual molecule
-    '''
-    def __init__(self,id: int,smile: str,atom_types: list,conectivity_matrix: jnp.ones(1), homo_lumo_grap_ref : 1.0,dm:jnp.ones((1,1))):
-        self.id = id
-        self.smile = smile
-        self.atom_types = atom_types
-        self.conectivity_matrix = conectivity_matrix
-        self.homo_lumo_grap_ref = homo_lumo_grap_ref
-        self.dm = dm
+    """
 
-if __name__ == "__main__":
+    id: str
+    smiles: str
+    atom_types: chex.ArrayNumpy
+    conectivity_matrix: chex.ArrayNumpy
+    homo_lumo_grap_ref: chex.Array
+    dm: chex.Array
 
-    atom_types = ['C', 'C', 'C', 'C']
 
-    conectivity_matrix = jnp.array([[0, 1, 0, 0],
-                                [1, 0, 1, 0],
-                                [0, 1, 0, 1],
-                                [0, 0, 1, 0]],dtype=int)
-    homo_lumo_grap_ref = 1.0
+# if __name__ == "__main__":
 
-    molec = myMolecule('caca',atom_types,conectivity_matrix,2.)
-    molecs = [molec,molec]
-    print(molecs[0].homo_lumo_grap_ref)
+# atom_types = ["C", "C", "C", "C"]
+
+# conectivity_matrix = jnp.array(
+#     [[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0]], dtype=int
+# )
+# homo_lumo_grap_ref = 1.0
+
+# molec = myMolecule("caca", atom_types, conectivity_matrix, 2.0)
+# molecs = [molec, molec]
+# print(molecs[0].homo_lumo_grap_ref)
