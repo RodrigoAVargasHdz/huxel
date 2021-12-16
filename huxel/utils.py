@@ -3,6 +3,7 @@ import datetime
 
 import jax
 import jax.numpy as jnp
+from jax import jit
 
 from huxel.molecule import myMolecule
 from huxel.parameters import H_X, H_XY, R_XY, Y_XY, N_ELECTRONS
@@ -271,18 +272,21 @@ def get_init_params(files):
         print('-----------------------------------',file=f)
         f.close()
         return params_init
-    
+
+@jit    
 def update_h_x(h_x):
     xc = h_x['C']
     xc_tree = jax.tree_unflatten(h_x_tree,xc*jnp.ones_like(jnp.array(h_x_flat)))
     return jax.tree_map(f_dif_pytrees,xc_tree, h_x)
 
+@jit
 def update_h_xy(h_xy):
     key = frozenset(['C', 'C'])
     xcc = h_xy[key]
     xcc_tree = jax.tree_unflatten(h_xy_tree,xcc*jnp.ones_like(jnp.array(h_xy_flat)))
     return jax.tree_map(f_div_pytrees,xcc_tree, h_xy)
 
+@jit
 def update_params_all(params):
     h_x = h_x = update_h_x(params['h_x'])
     h_xy = update_h_xy(params['h_xy'])
