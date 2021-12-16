@@ -1,0 +1,30 @@
+-----------------------------------
+Starting time
+2021-12-16 11:52
+-----------------------------------
+./Results_exp//out_huckel_xyz_N_10_l_0_AdamW.txt
+N = 10, l = 0
+lr = 0.02, w decay = 0.0001
+batch size = 128
+N Epoch = 25
+Opt method = AdamW
+f beta: exp
+W Decay ['h_x', 'h_xy']: 
+-----------------------------------
+Standard initial parameters
+-----------------------------------
+-----------------------------------
+Starting time
+2021-12-16 11:52
+-----------------------------------
+./Results_exp//out_huckel_xyz_N_10_l_0_AdamW.txt
+N = 10, l = 0
+lr = 0.02, w decay = 0.0001
+batch size = 128
+N Epoch = 25
+Opt method = AdamW
+f beta: exp
+W Decay ['h_x', 'h_xy']: 
+-----------------------------------
+Standard initial parameters
+-----------------------------------
