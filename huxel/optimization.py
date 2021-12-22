@@ -58,7 +58,7 @@ def _optimization(
     # optimization parameters
     # if n_tr < 100 is considered as porcentage of the training data
     w_decay = 1e-4
-    n_epochs = 25
+    n_epochs = 15
     opt_name = "AdamW"
 
     # files
@@ -132,7 +132,7 @@ def _optimization(
             loss_val0 = loss_val
             f_params = update_params_all(params)
             jnp.save(files["f_w"], f_params)
-            jnp.save(get_params_file_itr(files, epoch), f_params)
+            # jnp.save(get_params_file_itr(files, epoch), f_params)
 
     save_tr_and_val_loss(files, loss_tr_, loss_val_, n_epochs + 1)
 
