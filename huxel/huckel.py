@@ -1,3 +1,4 @@
+from tkinter import E
 import jax
 import jax.numpy as jnp
 from jax import random
@@ -38,6 +39,24 @@ def f_homo_lumo_gap(params,molecule,f_beta):
     lumo_energy = e_[lumo_idx]
     val = lumo_energy - homo_energy
     return val,(h_m,e_)
+
+def f_energy(params,molecule,f_beta, external_field = None):
+    h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
+
+    if external_field != None:
+        h_m_field =  _construct_huckel_matrix_field(molecule,external_field)
+        h_m = h_m + h_m_field
+    
+    e_,_ = _solve(h_m)
+
+    n_orbitals = h_m.shape[0]
+    occupations, spin_occupations, n_occupied, n_unpaired = _set_occupations(jax.lax.stop_gradient(electrons),jax.lax.stop_gradient(e_),jax.lax.stop_gradient(n_orbitals))
+    return jnp.dot(occupations,e_)
+
+def f_polarizability(params,molecule,f_beta, external_field = None):
+    polarizability_tensor = jax.hessian(f_energy,argnums=(3))(params,molecule,f_beta,external_field)
+    polarizability = (1/3.)*jnp.trace(polarizability_tensor)
+    return polarizability
 # -------
 def _construct_huckel_matrix(params,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule 
@@ -68,6 +87,16 @@ def _construct_huckel_matrix(params,molecule,f_beta):
     electrons = _electrons(atom_types)
 
     return huckel_matrix, electrons
+
+def _construct_huckel_matrix_field(molecule,field):
+    # atom_types = molecule.atom_types   
+    xyz = molecule.xyz
+    # diagonal terms
+    diag_ri = jnp.asarray([jnp.diag(xyz[:,i])for i in range(3)])
+    field_r = lambda fi,xi: fi*xi
+    diag_ri_tensor = vmap(field_r,in_axes=(0,0))(field,diag_ri)
+    diag_ri = jnp.sum(diag_ri_tensor,axis=0)
+    return diag_ri
 
 def _electrons(atom_types):
     return jnp.stack([N_ELECTRONS[atom_type] for atom_type in atom_types])

@@ -5,6 +5,8 @@ import jax
 import jax.numpy as jnp
 from jax import jit
 
+import numpy as onp
+
 from huxel.molecule import myMolecule
 from huxel.parameters import H_X, H_XY, R_XY, Y_XY, N_ELECTRONS
 from huxel.parameters import h_x_tree, h_x_flat, h_xy_tree, h_xy_flat
@@ -187,10 +189,10 @@ def random_pytrees(_pytree, key, minval=-1.0, maxval=1.0):
 
 
 def get_init_params_lr():
-    params_lr = jnp.load("huxel/data/lr_params.npy", allow_pickle=True)
+    params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
     alpha = params_lr.item()["alpha"] * jnp.ones(1)
     beta = params_lr.item()["beta"]
-    return alpha, beta
+    return jnp.array(alpha), jnp.array(beta)
 
 
 def get_y_xy_random(key):

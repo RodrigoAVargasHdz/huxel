@@ -4,18 +4,28 @@ import jax.numpy as jnp
 import chex
 
 
-@chex.dataclass
 class myMolecule:
     """
     Basic class for individual molecule
     """
 
-    id: str
-    smiles: str
-    atom_types: chex.ArrayNumpy
-    conectivity_matrix: chex.ArrayNumpy
-    homo_lumo_grap_ref: chex.Array
-    dm: chex.Array
+    def __init__(
+        self,
+        id: int,
+        smile: str,
+        atom_types: list,
+        conectivity_matrix: jnp.ones(1),
+        homo_lumo_grap_ref: 1.0,
+        dm: jnp.ones((1, 1)),
+        xyz: jnp.ones((2,3))
+    ):
+        self.id = id
+        self.smile = smile
+        self.atom_types = atom_types
+        self.conectivity_matrix = conectivity_matrix
+        self.homo_lumo_grap_ref = homo_lumo_grap_ref
+        self.dm = dm
+        self.xyz = xyz
 
 
 # if __name__ == "__main__":

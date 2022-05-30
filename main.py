@@ -7,11 +7,11 @@ from huxel.prediction import _pred, _pred_def
 
 def main():
     parser = argparse.ArgumentParser(description="opt overlap NN")
-    parser.add_argument("--N", type=int, default=10, help="traning data")
+    parser.add_argument("--N", type=int, default=0, help="traning data")
     parser.add_argument("--l", type=int, default=0, help="label")
     parser.add_argument("--lr", type=float, default=2e-3, help="learning rate")
     parser.add_argument("--batch_size", type=int, default=16, help="batches")
-    parser.add_argument("--job", type=str, default="opt", help="job type")
+    parser.add_argument("--job", type=str, default="pred_def", help="job type")
     parser.add_argument("--beta", type=str, default="c", help="beta function type")
     parser.add_argument(
         "--randW", type=bool, default=False, help="random initial params"
@@ -44,7 +44,6 @@ def main():
         _pred(n_tr, l, beta_, bool_randW)
     elif job_ == "pred_def":
         _pred_def(beta_)
-
 
 if __name__ == "__main__":
     main()
