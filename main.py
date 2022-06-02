@@ -38,6 +38,8 @@ def main():
     bool_randW = args.randW
     list_Wdecay = args.alist
 
+    # assert 0
+
     if job_ == "opt":
         _opt(n_tr, batch_size, lr, l, beta_, list_Wdecay, bool_randW)
     elif job_ == "pred":
