@@ -9,7 +9,7 @@ from jax import random, lax, value_and_grad
 from flax import optim
 import optax
 
-from huxel.data import get_tr_val_data
+from huxel.data_utils import get_tr_val_data
 from huxel.beta_functions import _f_beta
 from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.utils import (

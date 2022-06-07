@@ -2,9 +2,9 @@ from typing import Any
 import jax
 import jax.numpy as jnp
 
-from huxel.data import get_raw_data
+from huxel.data_utils import get_raw_data
 from huxel.huckel import homo_lumo_pred, polarizability_pred
-from huxel.observable import _observable
+from huxel.observables import _observable
 from huxel.utils import (
     get_files_names,
     batch_to_list_class,

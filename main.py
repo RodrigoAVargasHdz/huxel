@@ -28,6 +28,7 @@ def main():
         help="Examples: -i h_x h_xy r_xy y_xy'",
     )
 
+
     # bathch_size = #1024#768#512#256#128#64#32
     args = parser.parse_args()
     l = args.l
@@ -46,7 +47,7 @@ def main():
         _opt(obs_,n_tr, batch_size, lr, l, beta_, list_Wdecay, bool_randW)
     elif job_ == "pred":
         _pred(obs_,n_tr, l, beta_, bool_randW)
-    elif job_ == "pred_def":
+    elif job_ == "pred_def" or job_ == "pred0":
         _pred_def(obs_,beta_)
 
 if __name__ == "__main__":

@@ -93,7 +93,7 @@ def main_test():
     import jax
     from jax import value_and_grad
 
-    from huxel.data import get_tr_val_data, split_trainig_test, get_batches
+    from huxel.data_utils import get_tr_val_data, split_trainig_test, get_batches
     from huxel.utils import get_files_names, batch_to_list_class, get_default_params, get_external_field
     from huxel.beta_functions import _f_beta
     # from huxel.optimization import loss_polarizability
