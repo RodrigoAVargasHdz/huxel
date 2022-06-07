@@ -10,8 +10,6 @@ from flax import optim
 import optax
 
 from huxel.data_utils import get_tr_val_data
-from huxel.beta_functions import _f_beta
-from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.utils import (
     get_files_names,
     get_init_params,
@@ -49,7 +47,7 @@ def _optimization(
 
     # print info about the optimiation
     print_head(
-        files, n_tr, l, lr, w_decay, n_epochs, batch_size, opt_name, beta, list_Wdecay
+        files, obs, n_tr, l, lr, w_decay, n_epochs, batch_size, opt_name, beta, list_Wdecay
     )
 
     # training and validation data

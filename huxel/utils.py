@@ -40,11 +40,11 @@ def get_r_dir(method:str, bool_randW:bool):
     return r_dir
 
 
-def get_files_names(N:int, l:int, beta:str, randW:bool, opt_name:str="Adam"):
+def get_files_names(obs:str, N:int, l:int, beta:str, randW:bool, opt_name:str="Adam"):
     # r_dir = './Results_xyz/'
     r_dir = get_r_dir(beta, randW)
 
-    f_job = "huckel_xyz_N_{}_l_{}_{}".format(N, l, opt_name)
+    f_job = "huckel_{}_N_{}_l_{}_{}".format(obs, N, l, opt_name)
     f_out = "{}/out_{}.txt".format(r_dir, f_job)
     f_w = "{}/parameters_{}.npy".format(r_dir, f_job)
     f_pred = "{}/Prediction_{}.npy".format(r_dir, f_job)
@@ -74,7 +74,7 @@ def get_params_file_itr(files:dict, itr:int):
 # --------------------------------
 #     HEAD OF FILE
 def print_head(
-    files:dict, N:int, l:int, lr:float, w_decay:Any, n_epochs:int, batch_size:int, opt_name:str, beta:str, list_Wdecay:list
+    files:dict, obs:str, N:int, l:int, lr:float, w_decay:Any, n_epochs:int, batch_size:int, opt_name:str, beta:str, list_Wdecay:list
 ):
     f = open(files["f_out"], "a+")
     print("-----------------------------------", file=f)
@@ -82,6 +82,7 @@ def print_head(
     print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), file=f)
     print("-----------------------------------", file=f)
     print(files["f_out"], file=f)
+    print("Observable = {}".format(obs), file=f)
     print("N = {}, l = {}".format(N, l), file=f)
     print("lr = {}, w decay = {}".format(lr, w_decay), file=f)
     print("batch size = {}".format(batch_size), file=f)

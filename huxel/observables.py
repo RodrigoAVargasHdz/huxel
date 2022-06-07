@@ -16,7 +16,7 @@ def loss_rmse(params_tot:Dict,batch:Any,f_obs:Callable):
     
     return jnp.mean(diff_y), (y_pred, z_pred, y_true)
 
-def _observable(observable:str, beta:str, external_field:Any = None):
+def _f_observable(observable:str, beta:str, external_field:Any = None):
     f_beta = _f_beta(beta)
     ext_field = get_external_field(observable,external_field)
 
@@ -30,7 +30,7 @@ def _observable(observable:str, beta:str, external_field:Any = None):
         return wrapper  
 
 def _loss_function(observable:str, beta:str, external_field:Any=None):
-    f_obs = _observable(observable, beta, external_field)
+    f_obs = _f_observable(observable, beta, external_field)
     def wrapper(*args):
         return loss_rmse(*args,f_obs)
     return wrapper  
