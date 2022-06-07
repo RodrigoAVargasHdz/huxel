@@ -6,12 +6,13 @@ from huxel.prediction import _pred, _pred_def
 
 
 def main():
-    parser = argparse.ArgumentParser(description="opt overlap NN")
+    parser = argparse.ArgumentParser(description="Huxel = JAX + Huckel model")
     parser.add_argument("--N", type=int, default=0, help="traning data")
     parser.add_argument("--l", type=int, default=0, help="label")
     parser.add_argument("--lr", type=float, default=2e-3, help="learning rate")
     parser.add_argument("--batch_size", type=int, default=16, help="batches")
     parser.add_argument("--job", type=str, default="pred_def", help="job type")
+    parser.add_argument('--obs', type=str, default='homo_lumo', help="molecular observable")
     parser.add_argument("--beta", type=str, default="c", help="beta function type")
     parser.add_argument(
         "--randW", type=bool, default=False, help="random initial params"
@@ -34,6 +35,7 @@ def main():
     lr = args.lr
     batch_size = args.batch_size
     job_ = args.job
+    obs_ = args.obs
     beta_ = args.beta
     bool_randW = args.randW
     list_Wdecay = args.alist
@@ -41,11 +43,11 @@ def main():
     # assert 0
 
     if job_ == "opt":
-        _opt(n_tr, batch_size, lr, l, beta_, list_Wdecay, bool_randW)
+        _opt(obs_,n_tr, batch_size, lr, l, beta_, list_Wdecay, bool_randW)
     elif job_ == "pred":
-        _pred(n_tr, l, beta_, bool_randW)
+        _pred(obs_,n_tr, l, beta_, bool_randW)
     elif job_ == "pred_def":
-        _pred_def(beta_)
+        _pred_def(obs_,beta_)
 
 if __name__ == "__main__":
     main()

@@ -1,16 +1,10 @@
-import os
-import time
-import datetime
-
-import matplotlib
-import matplotlib.pyplot as plt
-
+from typing import Any
 import jax
 import jax.numpy as jnp
 
 from huxel.data import get_raw_data
-from huxel.huckel import linear_model_pred
-from huxel.beta_functions import _f_beta
+from huxel.huckel import homo_lumo_pred, polarizability_pred
+from huxel.observable import _observable
 from huxel.utils import (
     get_files_names,
     batch_to_list_class,
@@ -23,35 +17,27 @@ from jax.config import config
 jax.config.update("jax_enable_x64", True)
 
 
-def _pred(n_tr=50, l=0, beta="exp", bool_randW=False):
+def _pred(obs:str="homo_lumo", n_tr:int=50, l:int=0, beta:str="exp", bool_randW:bool=False, external_field:Any=None):
+
     opt_name = "AdamW"
+
     # files
     files = get_files_names(n_tr, l, beta, bool_randW, opt_name)
-
-    # print info about the optimiation
-    # print_head(files,n_tr,l,lr,w_decay,n_epochs,batch_size,opt_name)
 
     # if os.path.isfile(files['f_pred']):
     #     assert 0
 
     # initialize parameters
-    params_init = get_init_params(files)
-    # params0 = get_default_params()
+    params = get_init_params(files)
 
     # get data
     _, D = get_raw_data()
     D = batch_to_list_class(D)
 
-    f_beta = _f_beta(beta)
-
     # prediction
-    y_pred, z_pred, y_true = linear_model_pred(params_init, D, f_beta)
+    f_pred = _observable(obs, beta, external_field)
+    y_pred, z_pred, y_true = f_pred(params, D)
 
-    # prediction original parameters
-    # params0 = get_default_params()
-    # params_lr, params = params0
-    # alpha,beta = params_lr
-    # y_pred,z_pred,y_true = linear_model_pred(params0,D)
 
     print("finish prediction")
 
@@ -68,7 +54,7 @@ def _pred(n_tr=50, l=0, beta="exp", bool_randW=False):
     # jnp.save('./Results/Prediction_coulson.npy',R)
 
 
-def _pred_def(beta="exp"):
+def _pred_def(obs:str="homo_lumo", beta:str="exp", external_field:Any=None):
     opt_name = "AdamW"
     # files
     r_dir = "Results_default/"
@@ -97,10 +83,9 @@ def _pred_def(beta="exp"):
     _, D = get_raw_data()
     D = batch_to_list_class(D)
 
-    f_beta = _f_beta(beta)
-
     # prediction
-    y_pred, z_pred, y_true = linear_model_pred(params0, D, f_beta)
+    f_pred = _observable(obs, beta, external_field)
+    y_pred, z_pred, y_true = f_pred(params0, D)
 
     print("finish prediction")
 

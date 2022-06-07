@@ -1,5 +1,6 @@
 import os
 import datetime
+from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -12,15 +13,10 @@ from huxel.parameters import H_X, H_XY, R_XY, Y_XY, N_ELECTRONS
 from huxel.parameters import h_x_tree, h_x_flat, h_xy_tree, h_xy_flat
 from huxel.parameters import f_dif_pytrees, f_div_pytrees
 
-# r_dir = './Results_xyz_constant_random_params/'
-#'./Results_xyz/'
-#'./Results_xyz_linear/'
-#'./Results_xyz_constant/'
-#'./Results_xyz_constant_random_params'/
-
+PRNGKey = Any 
 # --------------------------------
 #     FILES
-def get_r_dir_old(method):
+def get_r_dir_old(method:str):
     if method == "exp":
         return "./Results_xyz/"
     elif method == "linear":
@@ -33,7 +29,7 @@ def get_r_dir_old(method):
         return "./Results_xyz_constant_random_params/"
 
 
-def get_r_dir(method, bool_randW):
+def get_r_dir(method:str, bool_randW:bool):
     if bool_randW:
         r_dir = "./Results_{}_randW/".format(method)
     else:
@@ -44,7 +40,7 @@ def get_r_dir(method, bool_randW):
     return r_dir
 
 
-def get_files_names(N, l, beta, randW, opt_name="Adam"):
+def get_files_names(N:int, l:int, beta:str, randW:bool, opt_name:str="Adam"):
     # r_dir = './Results_xyz/'
     r_dir = get_r_dir(beta, randW)
 
@@ -67,7 +63,7 @@ def get_files_names(N, l, beta, randW, opt_name="Adam"):
     return files
 
 
-def get_params_file_itr(files, itr):
+def get_params_file_itr(files:dict, itr:int):
     # r_dir = './Results_xyz/'
     f_job = files["f_job"]
     r_dir = files["r_dir"]
@@ -78,7 +74,7 @@ def get_params_file_itr(files, itr):
 # --------------------------------
 #     HEAD OF FILE
 def print_head(
-    files, N, l, lr, w_decay, n_epochs, batch_size, opt_name, beta, list_Wdecay
+    files:dict, N:int, l:int, lr:float, w_decay:Any, n_epochs:int, batch_size:int, opt_name:str, beta:str, list_Wdecay:list
 ):
     f = open(files["f_out"], "a+")
     print("-----------------------------------", file=f)
@@ -98,7 +94,7 @@ def print_head(
 
 
 #     TAIL OF FILE
-def print_tail(files):
+def print_tail(files:dict):
     f = open(files["f_out"], "a+")
     print("-----------------------------------", file=f)
     print("Finish time", file=f)
@@ -109,7 +105,7 @@ def print_tail(files):
 
 # --------------------------------
 #     DATA
-def batch_to_list(batch):
+def batch_to_list(batch:Any):
     # numpy array to list
     batch = batch.tolist()
     for b in batch:
@@ -118,7 +114,7 @@ def batch_to_list(batch):
     return batch
 
 
-def batch_to_list_class(batch):
+def batch_to_list_class(batch:Any):
     #     pytree to class-myMolecule
     batch = batch_to_list(batch)
     batch_ = []
@@ -129,6 +125,8 @@ def batch_to_list_class(batch):
             atom_types=b["atom_types"],
             conectivity_matrix=b["conectivity_matrix"],
             homo_lumo_grap_ref=b["homo_lumo_grap_ref"],
+            polarizability_ref=b['polarizability_ref'],
+            xyz=b['xyz'],
             dm=b["dm"],
         )
         # m = myMolecule(b['id'],b['smiles'],b['atom_types'],b['conectivity_matrix'],b['homo_lumo_grap_ref'],b['dm'])
@@ -136,7 +134,7 @@ def batch_to_list_class(batch):
     return batch_
 
 
-def save_tr_and_val_data(files, D_tr, D_val, n_batches):
+def save_tr_and_val_data(files:dict, D_tr:Any, D_val:Any, n_batches:int):
     file = files["f_data"]
     D = {
         "Training": D_tr,
@@ -146,7 +144,7 @@ def save_tr_and_val_data(files, D_tr, D_val, n_batches):
     jnp.save(file, D, allow_pickle=True)
 
 
-def save_tr_and_val_loss(files, loss_tr, loss_val, n_epochs):
+def save_tr_and_val_loss(files:dict, loss_tr:float, loss_val:float, n_epochs:int):
     epochs = jnp.arange(n_epochs + 1)
     loss_tr_ = jnp.asarray(loss_tr).ravel()
     loss_val_ = jnp.asarray(loss_val).ravel()
@@ -169,7 +167,7 @@ def save_tr_and_val_loss(files, loss_tr, loss_val, n_epochs):
 
 # --------------------------------
 #     PARAMETERS
-def load_pre_opt_params(files):
+def load_pre_opt_params(files:dict):
     if os.path.isfile(files["f_loss_opt"]):
         D = jnp.load(files["f_loss_opt"], allow_pickle=True)
         epochs = D.item()["epoch"]
@@ -178,7 +176,7 @@ def load_pre_opt_params(files):
         return epochs, loss_tr, loss_val
 
 
-def random_pytrees(_pytree, key, minval=-1.0, maxval=1.0):
+def random_pytrees(_pytree:dict, key:PRNGKey, minval:float=-1.0, maxval:float=1.0):
     _pytree_flat, _pytree_tree = jax.tree_util.tree_flatten(_pytree)
     _pytree_random_flat = jax.random.uniform(
         key, shape=(len(_pytree_flat),), minval=minval, maxval=maxval
@@ -195,7 +193,7 @@ def get_init_params_lr():
     return jnp.array(alpha), jnp.array(beta)
 
 
-def get_y_xy_random(key):
+def get_y_xy_random(key:PRNGKey):
     y_xy_flat, y_xy_tree = jax.tree_util.tree_flatten(Y_XY)
     y_xy_random_flat = jax.random.uniform(
         key, shape=(len(y_xy_flat),), minval=-0.1, maxval=0.1
@@ -206,7 +204,7 @@ def get_y_xy_random(key):
     return y_xy_random, subkey
 
 
-def get_params_pytrees(alpha, beta, h_x, h_xy, r_xy, y_xy):
+def get_params_pytrees(alpha:float, beta:float, h_x:dict, h_xy:dict, r_xy:dict, y_xy:dict):
     params_init = {
         "alpha": alpha,
         "beta": beta,
@@ -220,7 +218,7 @@ def get_params_pytrees(alpha, beta, h_x, h_xy, r_xy, y_xy):
 
 # include alpha y beta in the new parameters
 def get_default_params():
-    params_lr = get_init_params_lr()
+    params_lr = get_init_params_lr() #homo_lumo
     # params_init = (params_lr,params_coulson)
     params_init = {
         "alpha": params_lr[0],
@@ -233,7 +231,7 @@ def get_default_params():
     return get_params_pytrees(params_lr[0], params_lr[1], H_X, H_XY, R_XY, Y_XY)
 
 
-def get_params_bool(params_wdecay_):
+def get_params_bool(params_wdecay_:dict):
     """return params_bool where weight decay will be used. array used in masks in OPTAX"""
     params = get_default_params()
     params_bool = params
@@ -254,7 +252,7 @@ def get_params_bool(params_wdecay_):
     return params_bool
 
 
-def get_random_params(files, key):
+def get_random_params(files:dict, key:PRNGKey):
     if not os.path.isfile(files["f_w"]):
         params_init = get_default_params()
         # params_lr,params_coulson = params_init
@@ -290,7 +288,7 @@ def get_random_params(files, key):
         return params, key
 
 
-def get_init_params(files):
+def get_init_params(files:dict):
     params_init = get_default_params()
     if os.path.isfile(files["f_w"]):
         params = jnp.load(files["f_w"], allow_pickle=True)
@@ -317,6 +315,17 @@ def get_init_params(files):
         print("-----------------------------------", file=f)
         f.close()
         return params_init
+
+
+def get_external_field(objective:str='homo_lumo',magnitude:Any=None):
+    if objective == 'polarizability':
+        if isinstance(magnitude, float):
+            return magnitude*jnp.ones(3)
+        elif isinstance(magnitude, list):
+            return jnp.asarray(magnitude)
+    else:
+        if magnitude == None:
+            return None   
 
 
 @jit

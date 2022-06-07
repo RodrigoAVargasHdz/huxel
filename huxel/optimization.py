@@ -1,21 +1,17 @@
-import os
 import time
-import datetime
+from typing import Any
 import numpy as onp
-import argparse
 
 import jax
 import jax.numpy as jnp
-from jax import random
-from jax import lax, value_and_grad
+from jax import random, lax, value_and_grad
 
 from flax import optim
 import optax
 
-# from huxel.molecule import myMolecule
 from huxel.data import get_tr_val_data
 from huxel.beta_functions import _f_beta
-from huxel.huckel import linear_model_pred
+from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.utils import (
     get_files_names,
     get_init_params,
@@ -24,35 +20,22 @@ from huxel.utils import (
 )
 from huxel.utils import print_head, print_tail, get_params_file_itr, update_params_all
 from huxel.utils import save_tr_and_val_loss, batch_to_list_class
+from huxel.observables import _loss_function
 
 from jax.config import config
-
 jax.config.update("jax_enable_x64", True)
 
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
-
-
-def func():
-    return 0
-
-
-def f_loss_batch(params_tot, batch, f_beta):
-    params_tot = update_params_all(params_tot)
-    y_pred, z_pred, y_true = linear_model_pred(params_tot, batch, f_beta)
-
-    # diff_y = jnp.abs(y_pred-y_true)
-    diff_y = (y_pred - y_true) ** 2
-    return jnp.mean(diff_y)
-
-
 def _optimization(
-    n_tr=50,
-    batch_size=100,
-    lr=2e-3,
-    l=0,
-    beta="exp",
-    list_Wdecay=None,
-    bool_randW=False,
+    obs:str='homo_lumo',
+    n_tr:int=50,
+    batch_size:int=100,
+    lr:float=2e-3,
+    l:int=0,
+    beta:str="exp",
+    list_Wdecay:list=None,
+    bool_randW:bool=False,
+    external_field:Any=None,
 ):
 
     # optimization parameters
@@ -89,9 +72,8 @@ def _optimization(
     params_bool = get_params_bool(list_Wdecay)
 
     # select the function for off diagonal elements for H
-    f_beta = _f_beta(beta)
-    # f_loss_batch_ = lambda params,batch: f_loss_batch(params,batch,f_beta)
-    grad_fn = value_and_grad(f_loss_batch, argnums=(0,))
+    f_loss_batch = _loss_function(obs,beta, external_field)
+    grad_fn = value_and_grad(f_loss_batch, argnums=(0,), has_aux=True)
 
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
@@ -100,8 +82,8 @@ def _optimization(
     params = params_init
 
     # @jit
-    def train_step(params, optimizer_state, batch, f_beta):
-        loss, grads = grad_fn(params, batch, f_beta)
+    def train_step(params, optimizer_state, batch):
+        loss, grads = grad_fn(params, batch)
         updates, opt_state = optimizer.update(grads[0], optimizer_state, params)
         return optax.apply_updates(params, updates), opt_state, loss
 
@@ -114,11 +96,11 @@ def _optimization(
         loss_tr_epoch = []
         for _ in range(n_batches):
             batch = batch_to_list_class(next(batches))
-            params, opt_state, loss_tr = train_step(params, opt_state, batch, f_beta)
+            params, opt_state, loss_tr = train_step(params, opt_state, batch)
             loss_tr_epoch.append(loss_tr)
 
         loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
-        loss_val = f_loss_batch(params, batch_val, f_beta)
+        loss_val = f_loss_batch(params, batch_val)
 
         f = open(files["f_out"], "a+")
         time_epoch = time.time() - start_time_epoch
@@ -137,30 +119,3 @@ def _optimization(
     save_tr_and_val_loss(files, loss_tr_, loss_val_, n_epochs + 1)
 
     print_tail(files)
-
-
-def main():
-    parser = argparse.ArgumentParser(description="opt overlap NN")
-    parser.add_argument("--N", type=int, default=5, help="traning data")
-    parser.add_argument("--l", type=int, default=0, help="label")
-    parser.add_argument("--lr", type=float, default=2e-3, help="learning rate")
-    parser.add_argument("--batch_size", type=int, default=16, help="batches")
-    parser.add_argument("--beta", type=str, default="exp_freezeR", help="beta function")
-    parser.add_argument(
-        "--randW", type=bool, default=False, help="random initial params"
-    )
-
-    # bathch_size = #1024#768#512#256#128#64#32
-    args = parser.parse_args()
-    l = args.l
-    n_tr = args.N
-    lr = args.lr
-    batch_size = args.batch_size
-    beta = args.beta
-    bool_randW = args.randW
-
-    _optimization(n_tr, batch_size, lr, l, beta, bool_randW)
-
-
-if __name__ == "__main__":
-    main()

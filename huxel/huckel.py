@@ -8,24 +8,25 @@ from jax.tree_util import tree_flatten, tree_unflatten, tree_multimap
 from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
 
-def linear_model_pred(params,batch,f_beta):
+# -------
+def homo_lumo_pred(params,batch,f_beta):
     # params_lr, params = params_tot
     # alpha,beta = params_lr
 
-    z_pred,y_true = f_homo_lumo_gap_batch(params,batch,f_beta)
-    y_pred = params['beta']*z_pred + params['alpha']
-    return y_pred,z_pred,y_true
+    z_pred,y_true = f_homo_lumo_batch(params,batch,f_beta)
+    # y_pred = params['beta']*z_pred + params['alpha']
+    return z_pred,z_pred,y_true
 
-def f_homo_lumo_gap_batch(params,batch,f_beta):
+def f_homo_lumo_batch(params,batch,f_beta):
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
-        yi,_ = f_homo_lumo_gap(params,m,f_beta)
+        yi,_ = f_homo_lumo(params,m,f_beta)
         y_pred = jnp.append(y_pred,yi)   
         y_true = jnp.append(y_true,m.homo_lumo_grap_ref)   
     return y_pred[1:],y_true[1:]
 
-def f_homo_lumo_gap(params,molecule,f_beta):
+def f_homo_lumo(params,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule
     h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
     e_,_ = _solve(h_m)
@@ -39,6 +40,29 @@ def f_homo_lumo_gap(params,molecule,f_beta):
     lumo_energy = e_[lumo_idx]
     val = lumo_energy - homo_energy
     return val,(h_m,e_)
+# -------
+
+def polarizability_pred(params,batch,f_beta, external_field = None):
+    # params_lr, params = params_tot
+    # alpha,beta = params_lr
+
+    z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
+    # y_pred = params['beta']*z_pred + params['alpha']
+    return z_pred,z_pred,y_true
+
+def f_polarizability_batch(params,batch,f_beta, external_field = None):
+    y_pred = jnp.ones(1)
+    y_true = jnp.ones(1)
+    for m in batch:
+        yi = f_polarizability(params,m,f_beta, external_field)
+        y_pred = jnp.append(y_pred,yi)   
+        y_true = jnp.append(y_true,m.polarizability_ref)   
+    return y_pred[1:], y_true[1:]
+
+def f_polarizability(params,molecule,f_beta, external_field = None):
+    polarizability_tensor = jax.hessian(f_energy,argnums=(3))(params,molecule,f_beta,external_field)
+    polarizability = (1/3.)*jnp.trace(polarizability_tensor)
+    return polarizability
 
 def f_energy(params,molecule,f_beta, external_field = None):
     h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
@@ -53,10 +77,6 @@ def f_energy(params,molecule,f_beta, external_field = None):
     occupations, spin_occupations, n_occupied, n_unpaired = _set_occupations(jax.lax.stop_gradient(electrons),jax.lax.stop_gradient(e_),jax.lax.stop_gradient(n_orbitals))
     return jnp.dot(occupations,e_)
 
-def f_polarizability(params,molecule,f_beta, external_field = None):
-    polarizability_tensor = jax.hessian(f_energy,argnums=(3))(params,molecule,f_beta,external_field)
-    polarizability = (1/3.)*jnp.trace(polarizability_tensor)
-    return polarizability
 # -------
 def _construct_huckel_matrix(params,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule 
@@ -67,7 +87,6 @@ def _construct_huckel_matrix(params,molecule,f_beta):
     # conectivity_matrix = molecule['conectivity_matrix']
     # h_x, h_xy, r_xy, y_xy = params
     h_x = params['h_x']
-
 
     huckel_matrix = jnp.zeros_like(conectivity_matrix,dtype=jnp.float32)
     # off diagonal terms
@@ -179,7 +198,7 @@ def main_test():
     molec = myMolecule('test',atom_types,conectivity_matrix,1.)
       
     # test single molecule
-    v,g = value_and_grad(f_homo_lumo_gap,has_aux=True,)(params,molec)
+    v,g = value_and_grad(f_homo_lumo,has_aux=True,)(params,molec)
     print('HOMO-LUMO')
     homo_lumo_val, _ = v
     print(homo_lumo_val)

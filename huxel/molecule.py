@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+from typing import Any
 
 import chex
 
@@ -12,20 +13,28 @@ class myMolecule:
     def __init__(
         self,
         id: int,
-        smile: str,
+        smiles: str,
         atom_types: list,
-        conectivity_matrix: jnp.ones(1),
-        homo_lumo_grap_ref: 1.0,
-        dm: jnp.ones((1, 1)),
-        xyz: jnp.ones((2,3))
+        conectivity_matrix: Any = jnp.ones(1),
+        homo_lumo_grap_ref: float = 1.0,
+        polarizability_ref: float = 1.0,
+        xyz: Any = jnp.ones((2,3)),
+        dm: Any = None
     ):
         self.id = id
-        self.smile = smile
+        self.smiles = smiles
         self.atom_types = atom_types
         self.conectivity_matrix = conectivity_matrix
         self.homo_lumo_grap_ref = homo_lumo_grap_ref
-        self.dm = dm
+        self.polarizability_ref = polarizability_ref
         self.xyz = xyz
+        self.dm = dm
+
+    def get_dm(self):
+        z = self.xyz[:, None] - self.xyz[None, :]
+        self.dm = jnp.linalg.norm(z, axis=2)  # compute the bond length
+
+        
 
 
 # if __name__ == "__main__":

@@ -11,11 +11,11 @@ from huxel.utils import save_tr_and_val_data
 def get_raw_data():
     return (
         onp.load(
-            "/u/rvargas/huxel/huxel/data/gdb13_list_100000_training.npy",
+            "/u/rvargas/huxel_data_kjorner/gdb13_list_100000_hl-pol-xyz_training.npy",
             allow_pickle=True,
         ),
         onp.load(
-            "/u/rvargas/huxel/huxel/data/gdb13_list_100000_test.npy", allow_pickle=True
+            "/u/rvargas/huxel_data_kjorner/gdb13_list_100000_hl-pol-xyz_test.npy", allow_pickle=True
         ),
     )
 
@@ -66,7 +66,7 @@ def split_trainig_test(N, key, D=None):
 
 def get_tr_val_data(files, n_tr, subkey, batch_size):
     if os.path.isfile(files["f_data"]):
-        _D = jnp.load(files["f_data"], allow_pickle=True)
+        _D = onp.load(files["f_data"], allow_pickle=True)
         D_tr = _D.item()["Training"]
         D_val = _D.item()["Validation"]
         n_batches = _D.item()["n_batches"]
