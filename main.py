@@ -14,6 +14,7 @@ def main():
     parser.add_argument("--job", type=str, default="pred_def", help="job type")
     parser.add_argument('--obs', type=str, default='homo_lumo', help="molecular observable")
     parser.add_argument("--beta", type=str, default="c", help="beta function type")
+    parser.add_argument("--bool_data", type=bool, default=True, help="predict val or training data: True --> validation")
     parser.add_argument(
         "--randW", type=bool, default=False, help="random initial params"
     )
@@ -40,6 +41,7 @@ def main():
     beta_ = args.beta
     bool_randW = args.randW
     list_Wdecay = args.alist
+    bool_val_data = args.bool_data
 
     # assert 0
 
@@ -48,7 +50,7 @@ def main():
     elif job_ == "pred":
         _pred(obs_,n_tr, l, beta_, bool_randW)
     elif job_ == "pred_def" or job_ == "pred0":
-        _pred_def(obs_,beta_)
+        _pred_def(obs_,beta_,bool_val_data)
 
 if __name__ == "__main__":
     main()
