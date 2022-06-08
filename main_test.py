@@ -10,8 +10,8 @@ from huxel.molecule import myMolecule
 from huxel.optimization import _optimization as _opt
 from huxel.prediction import _pred, _pred_def
 
+def main_test_benzene():
 
-def main():
     atom_types = ["C", "C", "C", "C", "C", "C"]
     smile = "C6"
     obj = 'polarizability'
@@ -23,7 +23,7 @@ def main():
     batch_size = 64
     n_tr = 1
     job_ = 'opt'
-    external_field = 0.01
+    external_field = 0.0
 
     conectivity_matrix = jnp.array(
         [
@@ -49,45 +49,39 @@ def main():
     homo_lumo_grap_ref = -7.01 - (-0.42)
 
     molec = myMolecule(
-        "benzene",
-        smile,
-        atom_types,
-        conectivity_matrix,
-        homo_lumo_grap_ref,
-        xyz
+        id="benzene",
+        smiles=smile,
+        atom_types=atom_types,
+        conectivity_matrix=conectivity_matrix,
+        homo_lumo_grap_ref=homo_lumo_grap_ref,
+        polarizability_ref=1.31, #Kjell 
+        xyz=xyz,
     )
-
+    molec.get_dm()
 
     from huxel.huckel import f_polarizability
     from huxel.utils import get_default_params, get_external_field
     from huxel.beta_functions import _f_beta
+    from huxel.observables import _f_observable
 
     from jax import value_and_grad
 
     params0 = get_default_params()
     f_beta = _f_beta(beta_)
+    # f_obs = _f_observable(obj,beta_,external_field)
     external_field = get_external_field(obj,external_field)
 
-    # print(f_polarizability(params0,molec,f_beta,external_field))
-    v,g = value_and_grad(f_polarizability,argnums=(0,))(params0,molec,f_beta,external_field)
-    # v,g = value_and_grad(f_homo_lumo_gap,argnums=(0,),has_aux=True)(params0,molec,f_beta)
+
+    print(f_polarizability(params0,molec,f_beta,external_field))
+    # v,g = value_and_grad(f_obs,argnums=(0,))(params0,[molec])
+    # # v,g = value_and_grad(f_homo_lumo_gap,argnums=(0,),has_aux=True)(params0,molec,f_beta)
     # print(v)
-    g = g[0] 
+    # # g = g[0] 
     # print(g)
 
-    for index,key in enumerate(g):
-        print(g[key])
+    # for index,key in enumerate(g):
+    #     print(g[key])
 
-
-
-    assert 0
-
-    if job_ == "opt":
-        _opt(n_tr, batch_size, lr, l, beta_, list_Wdecay, bool_randW)
-    elif job_ == "pred":
-        _pred(n_tr, l, beta_, bool_randW)
-    elif job_ == "pred_def":
-        _pred_def(beta_)
     
 def main_test():
     import jax
@@ -155,6 +149,6 @@ def main_test():
 
 
 if __name__ == "__main__":
-    # main()
-    main_test()
+    main_test_benzene()
+    # main_test()
 

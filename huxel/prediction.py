@@ -6,6 +6,7 @@ from huxel.data_utils import get_raw_data
 from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.observables import _f_observable
 from huxel.utils import (
+    get_external_field,
     get_files_names,
     batch_to_list_class,
     get_init_params,
@@ -55,10 +56,21 @@ def _pred(obs:str="homo_lumo", n_tr:int=50, l:int=0, beta:str="exp", bool_randW:
 
 def _pred_def(obs:str="homo_lumo", beta:str="exp", external_field:Any=None, bool_val:bool=True):
 
+    # get data
+    D_tr, D_val = get_raw_data()
+    if bool_val: 
+        D = D_val
+        data_ = 'val'
+    else:
+        D = D_tr
+        data = 'training'
+
+    D = batch_to_list_class(D)
+
     # files
     r_dir = "Results_default/"
 
-    f_job = "huckel_{}_default".format(obs)
+    f_job = "huckel_{}_default_{}".format(obs,data_)
     f_out = "{}/out_{}.txt".format(r_dir, f_job)
     f_w = "{}/parameters_{}.npy".format(r_dir, f_job)
     f_pred = "{}/Prediction_{}.npy".format(r_dir, f_job)
@@ -78,16 +90,12 @@ def _pred_def(obs:str="homo_lumo", beta:str="exp", external_field:Any=None, bool
     # initialize parameters
     params0 = get_default_params()
 
-    # get data
-    D_tr, D_val = get_raw_data()
-    if bool_val: 
-        D = D_val
-    else:
-        D = D_tr
 
-    D = batch_to_list_class(D)
 
     # prediction
+    external_field = 0. 
+    external_field = get_external_field(external_field)
+
     f_pred = _f_observable(obs, beta, external_field)
     y_pred, z_pred, y_true = f_pred(params0, D)
 
