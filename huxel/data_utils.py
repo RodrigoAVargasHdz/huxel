@@ -8,14 +8,14 @@ import jax.numpy as jnp
 from huxel.utils import save_tr_and_val_data
 
 
-def get_raw_data():
+def get_raw_data(r_data:str='/u/rvargas/huxel_data_kjorner'):
     return (
         onp.load(
-            "/u/rvargas/huxel_data_kjorner/gdb13_list_100000_hl-pol-xyz_training.npy",
+            os.path.join(r_data,"gdb13_list_100000_hl-pol-xyz_training.npy"),
             allow_pickle=True,
         ),
         onp.load(
-            "/u/rvargas/huxel_data_kjorner/gdb13_list_100000_hl-pol-xyz_test.npy", allow_pickle=True
+            os.path.join(r_data,"gdb13_list_100000_hl-pol-xyz_test.npy"), allow_pickle=True
         ),
     )
 
