@@ -81,7 +81,7 @@ def _optimization(
 
     # @jit
     def train_step(params, optimizer_state, batch):
-        loss, grads = grad_fn(params, batch)
+        (loss,_), grads = grad_fn(params, batch)
         updates, opt_state = optimizer.update(grads[0], optimizer_state, params)
         return optax.apply_updates(params, updates), opt_state, loss
 

@@ -30,7 +30,18 @@ def _f_observable(observable:str, beta:str, external_field:Any = None):
         return wrapper  
 
 def _loss_function(observable:str, beta:str, external_field:Any=None):
-    f_obs = _f_observable(observable, beta, external_field)
-    def wrapper(*args):
-        return loss_rmse(*args,f_obs)
-    return wrapper  
+    if observable.lower() == "hl_pol" or observable.lower() == "homo_lumo_polarizability" or observable.lower() == "all":
+        f_hl = _f_observable("homo_lumo", beta)
+        f_pol = _f_observable("polarizability", beta, external_field)
+        def wrapper(*args):
+            labmdas_ = args[-1]
+            error_hl, _ = loss_rmse(*args[:-1], f_hl)
+            error_pol, _ = loss_rmse(*args[:-1], f_pol)
+            errors = jnp.stack([error_hl,error_pol])
+            return jnp.vdot(labmdas_, errors),  errors
+        return wrapper
+    else: 
+        f_obs = _f_observable(observable, beta, external_field)
+        def wrapper(*args):
+            return loss_rmse(*args,f_obs)
+        return wrapper
