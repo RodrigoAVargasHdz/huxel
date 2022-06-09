@@ -7,7 +7,8 @@ import numpy.random as onpr
 import jax
 import jax.numpy as jnp
 
-from huxel.utils import save_tr_and_val_data
+from huxel.molecule import myMolecule
+from huxel.utils import load_pre_opt_params
 
 
 def get_raw_data(r_data:str='/u/rvargas/huxel_data_kjorner'):
@@ -87,3 +88,65 @@ def data_normalization(y:Any):
     mu = jnp.mean(y)
     std = jnp.std(y)
     return mu, std
+
+
+def batch_to_list_class(batch:Any, obs:str='homo_lumo'):
+    #     pytree to class-myMolecule
+    batch = batch_to_list(batch)
+    batch_ = []
+    for b in batch:
+        m = myMolecule(
+            id=b["id"],
+            smiles=b["smiles"],
+            atom_types=b["atom_types"],
+            conectivity_matrix=b["conectivity_matrix"],
+            homo_lumo_grap_ref=b["homo_lumo_grap_ref"],
+            polarizability_ref=b['polarizability_ref'],
+            xyz=b['xyz'],
+            dm=b["dm"],
+        )
+        if obs.lower() == 'polarizability' or obs.lower() == "pol":
+            m.get_dm_AA_to_Bohr()
+
+        batch_.append(m)
+    return batch_
+
+def batch_to_list(batch:Any):
+    # numpy array to list
+    batch = batch.tolist()
+    for b in batch:
+        if not isinstance(b["atom_types"], list):
+            b["atom_types"] = b["atom_types"].tolist()
+    return batch
+
+
+def save_tr_and_val_data(files:dict, D_tr:Any, D_val:Any, n_batches:int):
+    file = files["f_data"]
+    D = {
+        "Training": D_tr,
+        "Validation": D_val,
+        "n_batches": n_batches,
+    }
+    jnp.save(file, D, allow_pickle=True)
+
+
+def save_tr_and_val_loss(files:dict, loss_tr:float, loss_val:float, n_epochs:int):
+    epochs = jnp.arange(n_epochs + 1)
+    loss_tr_ = jnp.asarray(loss_tr).ravel()
+    loss_val_ = jnp.asarray(loss_val).ravel()
+
+    if os.path.isfile(files["f_loss_opt"]):
+        pre_epochs, pre_loss_tr, pre_loss_val = load_pre_opt_params(files)
+        loss_tr_ = jnp.append(loss_tr_, pre_loss_tr)
+        loss_val_ = jnp.append(loss_val_, pre_loss_val)
+        # epochs = jnp.arange(0,pre_epochs.shape[0] + epochs.shape[0])
+        epochs = jnp.arange(loss_tr_.shape[0])
+
+    D = {
+        "epoch": epochs,
+        "loss_tr": loss_tr_,
+        "loss_val": loss_val_,
+        # 'loss_test':loss_test,
+    }
+    jnp.save(files["f_loss_opt"], D, allow_pickle=True)
+

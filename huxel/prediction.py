@@ -2,13 +2,12 @@ from typing import Any
 import jax
 import jax.numpy as jnp
 
-from huxel.data_utils import get_raw_data
+from huxel.data_utils import get_raw_data, batch_to_list_class
 from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.observables import _f_observable
 from huxel.utils import (
     get_external_field,
     get_files_names,
-    batch_to_list_class,
     get_init_params,
     get_default_params,
 )
@@ -103,7 +102,7 @@ def _pred_def(obs:str="homo_lumo", beta:str="exp", pred_data:str="val"):
 
     # prediction
     external_field = 0. 
-    external_field = get_external_field(external_field)
+    external_field = get_external_field(obs, external_field)
 
     f_pred = _f_observable(obs, beta, external_field)
     y_pred, z_pred, y_true = f_pred(params0, D)

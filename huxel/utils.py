@@ -10,8 +10,8 @@ import numpy as onp
 
 from huxel.molecule import myMolecule
 from huxel.parameters import H_X, H_XY, N_ELECTRONS
-from huxel.parameters import R_XY_Bohr as R_XY
-from huxel.parameters import Y_XY_Bohr as Y_XY
+from huxel.parameters import R_XY_Bohr, R_XY_AA
+from huxel.parameters import Y_XY_Bohr, Y_XY_AA
 from huxel.parameters import h_x_tree, h_x_flat, h_xy_tree, h_xy_flat, r_xy_tree, r_xy_flat
 from huxel.parameters import f_dif_pytrees, f_div_pytrees, f_mult_pytrees, f_sum_pytrees
 from huxel.parameters import au_to_eV, Bohr_to_AA
@@ -62,6 +62,7 @@ def get_files_names(obs:str, N:int, l:int, beta:str, randW:bool, opt_name:str="A
         "f_data": f_data,
         "f_loss_opt": f_loss_opt,
         "r_dir": r_dir,
+        "obs": obs,
     }
     return files
 
@@ -105,70 +106,6 @@ def print_tail(files:dict):
     print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), file=f)
     print("-----------------------------------", file=f)
     f.close()
-
-
-# --------------------------------
-#     DATA
-def batch_to_list(batch:Any):
-    # numpy array to list
-    batch = batch.tolist()
-    for b in batch:
-        if not isinstance(b["atom_types"], list):
-            b["atom_types"] = b["atom_types"].tolist()
-    return batch
-
-
-def batch_to_list_class(batch:Any):
-    #     pytree to class-myMolecule
-    batch = batch_to_list(batch)
-    batch_ = []
-    for b in batch:
-        m = myMolecule(
-            id=b["id"],
-            smiles=b["smiles"],
-            atom_types=b["atom_types"],
-            conectivity_matrix=b["conectivity_matrix"],
-            homo_lumo_grap_ref=b["homo_lumo_grap_ref"],
-            polarizability_ref=b['polarizability_ref'],
-            xyz=b['xyz'],
-            dm=b["dm"],
-        )
-        m.get_dm_AA_to_Bohr()
-
-        batch_.append(m)
-    return batch_
-
-
-def save_tr_and_val_data(files:dict, D_tr:Any, D_val:Any, n_batches:int):
-    file = files["f_data"]
-    D = {
-        "Training": D_tr,
-        "Validation": D_val,
-        "n_batches": n_batches,
-    }
-    jnp.save(file, D, allow_pickle=True)
-
-
-def save_tr_and_val_loss(files:dict, loss_tr:float, loss_val:float, n_epochs:int):
-    epochs = jnp.arange(n_epochs + 1)
-    loss_tr_ = jnp.asarray(loss_tr).ravel()
-    loss_val_ = jnp.asarray(loss_val).ravel()
-
-    if os.path.isfile(files["f_loss_opt"]):
-        pre_epochs, pre_loss_tr, pre_loss_val = load_pre_opt_params(files)
-        loss_tr_ = jnp.append(loss_tr_, pre_loss_tr)
-        loss_val_ = jnp.append(loss_val_, pre_loss_val)
-        # epochs = jnp.arange(0,pre_epochs.shape[0] + epochs.shape[0])
-        epochs = jnp.arange(loss_tr_.shape[0])
-
-    D = {
-        "epoch": epochs,
-        "loss_tr": loss_tr_,
-        "loss_val": loss_val_,
-        # 'loss_test':loss_test,
-    }
-    jnp.save(files["f_loss_opt"], D, allow_pickle=True)
-
 
 # --------------------------------
 #     PARAMETERS
@@ -222,9 +159,18 @@ def get_params_pytrees(hl_a:float, hl_b:float, pol_a:float, pol_b:float, h_x:dic
 
 
 # include alpha y beta in the new parameters
-def get_default_params():
-    params_lr = get_init_params_homo_lumo() #homo_lumo
-    return get_params_pytrees(params_lr[0], params_lr[1],jnp.ones(1), jnp.ones(1), H_X, H_XY, R_XY, Y_XY)
+def get_default_params(observable:str="homo_lumo"):
+    params_hl = get_init_params_homo_lumo() #homo_lumo
+    params_pol = (jnp.ones(1), jnp.ones(1))
+    
+    if observable.lower() == 'homo_lumo' or observable.lower() == 'hl':
+        R_XY = R_XY_AA
+        Y_XY = Y_XY_AA
+    elif observable.lower() == 'homo_lumo' or observable.lower() == 'hl':
+        R_XY = R_XY_Bohr
+        Y_XY = Y_XY_Bohr
+
+    return get_params_pytrees(params_hl[0], params_hl[1], params_pol[0], params_pol[1], H_X, H_XY, R_XY, Y_XY)
 
 
 def get_params_bool(params_wdecay_:dict):
@@ -289,7 +235,7 @@ def get_random_params(files:dict, key:PRNGKey):
         return params, key
 
 
-def get_init_params(files:dict):
+def get_init_params(files:dict, obs:str="homo_lumo"):
     params_init = get_default_params()
     if os.path.isfile(files["f_w"]):
         params = jnp.load(files["f_w"], allow_pickle=True)

@@ -17,7 +17,7 @@ from huxel.utils import (
     get_params_bool,
 )
 from huxel.utils import print_head, print_tail, get_params_file_itr
-from huxel.utils import save_tr_and_val_loss, batch_to_list_class
+from huxel.data_utils import save_tr_and_val_loss, batch_to_list_class
 from huxel.observables import _f_observable, _loss_function, _preprocessing_params
 
 from jax.config import config
@@ -74,19 +74,6 @@ def _optimization(
     # select the function for off diagonal elements for H
     f_loss_batch = _loss_function(obs, beta, external_field)
     grad_fn = value_and_grad(f_loss_batch, argnums=(0,), has_aux=True)
-
-    params_flat, params_tree = jax.tree_util.tree_flatten(params_init)
-    # print(params_flat)
-
-    batch = batch_to_list_class(next(batches))
-    
-    (loss,_), grad = grad_fn(params_init,batch)
-
-    print(loss)
-    grad_params_flat, _ = jax.tree_util.tree_flatten(grad)
-    print(grad_params_flat)
-
-    assert 0
 
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
