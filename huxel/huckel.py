@@ -7,12 +7,10 @@ from jax.tree_util import tree_flatten, tree_unflatten, tree_multimap
 
 from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
+from huxel.utils import normalize_params_wrt_C, normalize_params_polarizability
 
 # -------
 def homo_lumo_pred(params,batch,f_beta):
-    # params_lr, params = params_tot
-    # alpha,beta = params_lr
-
     z_pred,y_true = f_homo_lumo_batch(params,batch,f_beta)
     # y_pred = params['beta']*z_pred + params['alpha']
     return z_pred,z_pred,y_true
@@ -43,9 +41,6 @@ def f_homo_lumo(params,molecule,f_beta):
 # -------
 
 def polarizability_pred(params,batch,f_beta, external_field = None):
-    # params_lr, params = params_tot
-    # alpha,beta = params_lr
-
     z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
     # y_pred = params['beta']*z_pred + params['alpha']
     return z_pred,z_pred,y_true

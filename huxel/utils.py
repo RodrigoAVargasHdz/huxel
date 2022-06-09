@@ -9,9 +9,12 @@ from jax import jit
 import numpy as onp
 
 from huxel.molecule import myMolecule
-from huxel.parameters import H_X, H_XY, R_XY, Y_XY, N_ELECTRONS
-from huxel.parameters import h_x_tree, h_x_flat, h_xy_tree, h_xy_flat
-from huxel.parameters import f_dif_pytrees, f_div_pytrees
+from huxel.parameters import H_X, H_XY, N_ELECTRONS
+from huxel.parameters import R_XY_Bohr as R_XY
+from huxel.parameters import Y_XY_Bohr as Y_XY
+from huxel.parameters import h_x_tree, h_x_flat, h_xy_tree, h_xy_flat, r_xy_tree, r_xy_flat
+from huxel.parameters import f_dif_pytrees, f_div_pytrees, f_mult_pytrees, f_sum_pytrees
+from huxel.parameters import au_to_eV, Bohr_to_AA
 
 PRNGKey = Any 
 # --------------------------------
@@ -130,7 +133,8 @@ def batch_to_list_class(batch:Any):
             xyz=b['xyz'],
             dm=b["dm"],
         )
-        # m = myMolecule(b['id'],b['smiles'],b['atom_types'],b['conectivity_matrix'],b['homo_lumo_grap_ref'],b['dm'])
+        m.get_dm_AA_to_Bohr()
+
         batch_.append(m)
     return batch_
 
@@ -187,7 +191,7 @@ def random_pytrees(_pytree:dict, key:PRNGKey, minval:float=-1.0, maxval:float=1.
     return _new_pytree, subkey
 
 
-def get_init_params_lr():
+def get_init_params_homo_lumo():
     params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
     alpha = params_lr.item()["alpha"] * jnp.ones(1)
     beta = params_lr.item()["beta"]
@@ -205,10 +209,10 @@ def get_y_xy_random(key:PRNGKey):
     return y_xy_random, subkey
 
 
-def get_params_pytrees(alpha:float, beta:float, h_x:dict, h_xy:dict, r_xy:dict, y_xy:dict):
+def get_params_pytrees(hl_a:float, hl_b:float, pol_a:float, pol_b:float, h_x:dict, h_xy:dict, r_xy:dict, y_xy:dict):
     params_init = {
-        "alpha": alpha,
-        "beta": beta,
+        "hl_params":{"a": hl_a,"b": hl_b},
+        "pol_params":{"a": pol_a,"b": pol_b},
         "h_x": h_x,
         "h_xy": h_xy,
         "r_xy": r_xy,
@@ -219,17 +223,8 @@ def get_params_pytrees(alpha:float, beta:float, h_x:dict, h_xy:dict, r_xy:dict, 
 
 # include alpha y beta in the new parameters
 def get_default_params():
-    params_lr = get_init_params_lr() #homo_lumo
-    # params_init = (params_lr,params_coulson)
-    params_init = {
-        "alpha": params_lr[0],
-        "beta": params_lr[1],
-        "h_x": H_X,
-        "h_xy": H_XY,
-        "r_xy": R_XY,
-        "y_xy": Y_XY,
-    }
-    return get_params_pytrees(params_lr[0], params_lr[1], H_X, H_XY, R_XY, Y_XY)
+    params_lr = get_init_params_homo_lumo() #homo_lumo
+    return get_params_pytrees(params_lr[0], params_lr[1],jnp.ones(1), jnp.ones(1), H_X, H_XY, R_XY, Y_XY)
 
 
 def get_params_bool(params_wdecay_:dict):
@@ -258,9 +253,14 @@ def get_random_params(files:dict, key:PRNGKey):
         params_init = get_default_params()
         # params_lr,params_coulson = params_init
 
-        alpha_random = jax.random.uniform(key, shape=(1,), minval=-1.0, maxval=1.0)
+        hl_a_random = jax.random.uniform(key, shape=(1,), minval=-1.0, maxval=1.0)
         _, subkey = jax.random.split(key)
-        beta_random = jax.random.uniform(subkey, shape=(1,), minval=-1.0, maxval=1.0)
+        hl_b_random = jax.random.uniform(subkey, shape=(1,), minval=-1.0, maxval=1.0)
+        _, subkey = jax.random.split(subkey)
+
+        pol_a_random = jax.random.uniform(key, shape=(1,), minval=-1.0, maxval=1.0)
+        _, subkey = jax.random.split(key)
+        pol_b_random = jax.random.uniform(subkey, shape=(1,), minval=-1.0, maxval=1.0)
         _, subkey = jax.random.split(subkey)
 
         h_x = params_init["h_x"]
@@ -276,7 +276,7 @@ def get_random_params(files:dict, key:PRNGKey):
         y_xy_random, subkey = get_y_xy_random(subkey)
 
         params = get_params_pytrees(
-            alpha_random, beta_random, h_x_random, h_xy_random, r_xy_random, y_xy_random
+            hl_a_random, hl_b_random, pol_a_random , pol_b_random, h_x_random, h_xy_random, r_xy_random, y_xy_random
         )
 
         f = open(files["f_out"], "a+")
@@ -295,14 +295,17 @@ def get_init_params(files:dict):
         params = jnp.load(files["f_w"], allow_pickle=True)
         print(files["f_w"])
         # params_lr,params_coulson = params
-        alpha = params.item()["alpha"]
-        beta = params.item()["beta"]
+        hl_a = params.item()["hl_params"]["a"]
+        hl_b = params.item()["hl_params"]["b"]
+        pol_a = params.item()["pol_params"]["a"]
+        pol_b = params.item()["pol_params"]["b"]
+
         h_x = params.item()["h_x"]
         h_xy = params.item()["h_xy"]
         r_xy = params.item()["r_xy"]
         y_xy = params.item()["y_xy"]
 
-        params = get_params_pytrees(alpha, beta, h_x, h_xy, r_xy, y_xy)
+        params = get_params_pytrees(hl_a, hl_b, pol_a, pol_b, h_x, h_xy, r_xy, y_xy)
 
         f = open(files["f_out"], "a+")
         print("Reading parameters from prev. optimization", file=f)
@@ -318,23 +321,22 @@ def get_init_params(files:dict):
         return params_init
 
 
-def get_external_field(objective:str='homo_lumo',magnitude:Any=None):
-    if objective == 'polarizability':
+def get_external_field(observable:str='homo_lumo',magnitude:Any=0.):
+    if observable.lower() == 'polarizability' or observable.lower() == 'pol':
         if isinstance(magnitude, float):
             return magnitude*jnp.ones(3)
         elif isinstance(magnitude, list):
             return jnp.asarray(magnitude)
+        else: #default
+            return jnp.zeros(3)
     else:
-        if magnitude == None:
-            return None   
-
+        return None   
 
 @jit
 def update_h_x(h_x):
     xc = h_x["C"]
     xc_tree = jax.tree_unflatten(h_x_tree, xc * jnp.ones_like(jnp.array(h_x_flat)))
     return jax.tree_map(f_dif_pytrees, xc_tree, h_x)
-
 
 @jit
 def update_h_xy(h_xy):
@@ -343,12 +345,54 @@ def update_h_xy(h_xy):
     xcc_tree = jax.tree_unflatten(h_xy_tree, xcc * jnp.ones_like(jnp.array(h_xy_flat)))
     return jax.tree_map(f_div_pytrees, xcc_tree, h_xy)
 
+@jit
+def update_h_x_au_to_eV(h_x, pol_a):
+    x_tree = jax.tree_unflatten(h_x_tree, (pol_a/au_to_eV) * jnp.ones_like(jnp.array(h_x_flat)))
+    return jax.tree_map(f_mult_pytrees, x_tree, h_x)
 
 @jit
-def update_params_all(params):
-    h_x = h_x = update_h_x(params["h_x"])
+def update_h_xy_au_to_eV(h_xy, pol_a):
+    xy_tree = jax.tree_unflatten(h_xy_tree, (pol_a/au_to_eV) * jnp.ones_like(jnp.array(h_xy_flat)))
+    return jax.tree_map(f_mult_pytrees, xy_tree, h_xy)
+
+@jit
+def update_r_xy_Bohr_to_AA(r_xy):
+    xy_tree = jax.tree_unflatten(r_xy_tree, (Bohr_to_AA) * jnp.ones_like(jnp.array(r_xy_flat)))
+    return jax.tree_map(f_div_pytrees, xy_tree, r_xy)
+
+@jit
+def normalize_params_wrt_C(params):
+    h_x =  update_h_x(params["h_x"])
     h_xy = update_h_xy(params["h_xy"])
+
     new_params = get_params_pytrees(
-        params["alpha"], params["beta"], h_x, h_xy, params["r_xy"], params["y_xy"]
+        params["hl_params"]["a"], 
+        params["hl_params"]["b"], 
+        params["pol_params"]["a"], 
+        params["pol_params"]["b"], 
+        h_x, 
+        h_xy, 
+        params["r_xy"], 
+        params["y_xy"],
+    )
+    return new_params
+
+@jit
+def normalize_params_polarizability(params):
+    params_norm_c = normalize_params_wrt_C(params)
+    pol_a = params_norm_c["pol_params"]["a"]
+
+    h_x = update_h_x_au_to_eV(params_norm_c["h_x"], pol_a)
+    h_xy = update_h_xy_au_to_eV(params_norm_c["h_xy"], pol_a)
+    
+    new_params = get_params_pytrees(
+        params_norm_c["hl_params"]["a"], 
+        params_norm_c["hl_params"]["b"], 
+        params_norm_c["pol_params"]["a"], 
+        params_norm_c["pol_params"]["b"], 
+        h_x, 
+        h_xy, 
+        params_norm_c["r_xy"], 
+        params_norm_c["y_xy"],
     )
     return new_params

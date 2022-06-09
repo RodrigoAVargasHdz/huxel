@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from typing import Any
 
 import chex
-
+from huxel.parameters import Bohr_to_AA
 
 class myMolecule:
     """
@@ -34,6 +34,10 @@ class myMolecule:
         z = self.xyz[:, None] - self.xyz[None, :]
         self.dm = jnp.linalg.norm(z, axis=2)  # compute the bond length
 
+    def get_dm_AA_to_Bohr(self):
+        z = self.xyz[:, None] - self.xyz[None, :]
+        dm = jnp.linalg.norm(z, axis=2)  # compute the bond length      
+        self.dm = jnp.divide(dm, Bohr_to_AA) # Bohr -> AA
         
 
 

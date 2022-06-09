@@ -1,6 +1,8 @@
+import os
+from typing import Any
+
 import numpy as onp
 import numpy.random as onpr
-import os
 
 import jax
 import jax.numpy as jnp
@@ -79,3 +81,9 @@ def get_tr_val_data(files, n_tr, subkey, batch_size):
         save_tr_and_val_data(files, D_tr, D_val, n_batches)
 
     return D_tr, D_val, batches, n_batches, subkey
+
+
+def data_normalization(y:Any):
+    mu = jnp.mean(y)
+    std = jnp.std(y)
+    return mu, std

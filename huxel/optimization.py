@@ -16,9 +16,9 @@ from huxel.utils import (
     get_random_params,
     get_params_bool,
 )
-from huxel.utils import print_head, print_tail, get_params_file_itr, update_params_all
+from huxel.utils import print_head, print_tail, get_params_file_itr
 from huxel.utils import save_tr_and_val_loss, batch_to_list_class
-from huxel.observables import _loss_function
+from huxel.observables import _f_observable, _loss_function, _preprocessing_params
 
 from jax.config import config
 jax.config.update("jax_enable_x64", True)
@@ -26,7 +26,7 @@ jax.config.update("jax_enable_x64", True)
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
 def _optimization(
     obs:str='homo_lumo',
-    n_tr:int=50,
+    n_tr:int=1,
     batch_size:int=100,
     lr:float=2e-3,
     l:int=0,
@@ -43,7 +43,7 @@ def _optimization(
     opt_name = "AdamW"
 
     # files
-    files = get_files_names(n_tr, l, beta, bool_randW, opt_name)
+    files = get_files_names(obs, n_tr, l, beta, bool_randW, opt_name)
 
     # print info about the optimiation
     print_head(
@@ -69,9 +69,24 @@ def _optimization(
 
     params_bool = get_params_bool(list_Wdecay)
 
+    f_params_preprocessing = _preprocessing_params(obs)
+
     # select the function for off diagonal elements for H
-    f_loss_batch = _loss_function(obs,beta, external_field)
+    f_loss_batch = _loss_function(obs, beta, external_field)
     grad_fn = value_and_grad(f_loss_batch, argnums=(0,), has_aux=True)
+
+    params_flat, params_tree = jax.tree_util.tree_flatten(params_init)
+    # print(params_flat)
+
+    batch = batch_to_list_class(next(batches))
+    
+    (loss,_), grad = grad_fn(params_init,batch)
+
+    print(loss)
+    grad_params_flat, _ = jax.tree_util.tree_flatten(grad)
+    print(grad_params_flat)
+
+    assert 0
 
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
@@ -98,11 +113,11 @@ def _optimization(
             loss_tr_epoch.append(loss_tr)
 
         loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
-        loss_val = f_loss_batch(params, batch_val)
+        loss_val,_ = f_loss_batch(params, batch_val)
 
         f = open(files["f_out"], "a+")
         time_epoch = time.time() - start_time_epoch
-        print(epoch, loss_tr, loss_val, time_epoch, file=f)
+        print(epoch, loss_tr_mean, loss_val, time_epoch, file=f)
         f.close()
 
         loss_tr_.append(loss_tr_mean)
@@ -110,7 +125,7 @@ def _optimization(
 
         if loss_val < loss_val0:
             loss_val0 = loss_val
-            f_params = update_params_all(params)
+            f_params = params #f_params_preprocessing(params)
             jnp.save(files["f_w"], f_params)
             jnp.save(get_params_file_itr(files, epoch), f_params)
 

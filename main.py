@@ -25,7 +25,7 @@ def main():
         dest="alist",
         type=str,
         nargs="*",
-        default=["alpha", "beta", "h_x", "h_xy", "r_xy", "y_xy"],
+        default=[],#["hl_params","pol_params", "hl_b", "h_x", "h_xy", "r_xy", "y_xy"],
         help="Examples: -i h_x h_xy r_xy y_xy'",
     )
 
