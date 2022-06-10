@@ -136,7 +136,7 @@ def get_init_params_homo_lumo():
 
 
 def get_y_xy_random(key:PRNGKey):
-    y_xy_flat, y_xy_tree = jax.tree_util.tree_flatten(Y_XY)
+    y_xy_flat, y_xy_tree = jax.tree_util.tree_flatten(Y_XY_AA)
     y_xy_random_flat = jax.random.uniform(
         key, shape=(len(y_xy_flat),), minval=-0.1, maxval=0.1
     )
