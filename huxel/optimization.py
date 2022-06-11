@@ -37,7 +37,6 @@ def _optimization(
 ):
 
     # optimization parameters
-    # if n_tr < 100 is considered as porcentage of the training data
     w_decay = 1e-4
     n_epochs = 25
     opt_name = "AdamW"
@@ -69,6 +68,7 @@ def _optimization(
 
     params_bool = get_params_bool(list_Wdecay)
 
+    # preprocessing parameters
     f_params_preprocessing = _preprocessing_params(obs)
 
     # select the function for off diagonal elements for H
@@ -105,6 +105,7 @@ def _optimization(
         f = open(files["f_out"], "a+")
         time_epoch = time.time() - start_time_epoch
         print(epoch, loss_tr_mean, loss_val, time_epoch, file=f)
+        # print(params["pol_params"],file=f)
         f.close()
 
         loss_tr_.append(loss_tr_mean)

@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser(description="Huxel = JAX + Huckel model")
     parser.add_argument("--N", type=int, default=0, help="traning data")
     parser.add_argument("--l", type=int, default=0, help="label")
-    parser.add_argument("--lr", type=float, default=2e-3, help="learning rate")
+    parser.add_argument("--lr", type=float, default=2e-2, help="learning rate")
     parser.add_argument("--batch_size", type=int, default=16, help="batches")
     parser.add_argument("--job", type=str, default="pred_def", help="job type")
     parser.add_argument('--obs', type=str, default='homo_lumo', help="molecular observable")

@@ -10,6 +10,7 @@ import jax.numpy as jnp
 from huxel.molecule import myMolecule
 from huxel.utils import load_pre_opt_params
 
+PRNGKey = Any 
 
 def get_raw_data(r_data:str='/u/rvargas/huxel_data_kjorner'):
     return (
@@ -23,7 +24,7 @@ def get_raw_data(r_data:str='/u/rvargas/huxel_data_kjorner'):
     )
 
 
-def get_batches(Dtr, batch_size, key):
+def get_batches(Dtr:Any, batch_size:int, key:PRNGKey):
     # Dtr = get_data()
     # Xtr,ytr = Dtr
     N = len(Dtr)
@@ -45,7 +46,7 @@ def get_batches(Dtr, batch_size, key):
     return batches, n_batches
 
 
-def split_trainig_test(N, key, D=None):
+def split_trainig_test(N:int, key:PRNGKey, D:Any=None):
     if D is None:
         D, _ = get_raw_data()
     N_tot = len(D)
@@ -67,7 +68,7 @@ def split_trainig_test(N, key, D=None):
     return D_tr, D_val
 
 
-def get_tr_val_data(files, n_tr, subkey, batch_size):
+def get_tr_val_data(files:dict, n_tr:int, subkey:PRNGKey, batch_size:int):
     if os.path.isfile(files["f_data"]):
         _D = onp.load(files["f_data"], allow_pickle=True)
         D_tr = _D.item()["Training"]

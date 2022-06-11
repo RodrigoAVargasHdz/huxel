@@ -12,8 +12,8 @@ from huxel.utils import normalize_params_wrt_C, normalize_params_polarizability
 # -------
 def homo_lumo_pred(params,batch,f_beta):
     z_pred,y_true = f_homo_lumo_batch(params,batch,f_beta)
-    # y_pred = params['beta']*z_pred + params['alpha']
-    return z_pred,z_pred,y_true
+    y_pred = params["hl_params"]["a"]*z_pred + params["hl_params"]["b"]
+    return y_pred,z_pred,y_true
 
 def f_homo_lumo_batch(params,batch,f_beta):
     y_pred = jnp.ones(1)
@@ -42,8 +42,8 @@ def f_homo_lumo(params,molecule,f_beta):
 
 def polarizability_pred(params,batch,f_beta, external_field = None):
     z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
-    # y_pred = params['beta']*z_pred + params['alpha']
-    return z_pred,z_pred,y_true
+    y_pred = z_pred * params["pol_params"]["b"]
+    return y_pred,z_pred,y_true
 
 def f_polarizability_batch(params,batch,f_beta, external_field = None):
     y_pred = jnp.ones(1)
