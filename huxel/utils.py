@@ -168,7 +168,7 @@ def get_params_pytrees(hl_a:float, hl_b:float, pol_a:float, pol_b:float, h_x:dic
 # include alpha y beta in the new parameters
 def get_default_params(observable:str="homo_lumo"):
     params_hl = get_init_params_homo_lumo() #homo_lumo
-    params_pol = (jnp.ones(1), jnp.ones(1))
+    params_pol = get_init_params_polarizability() #(jnp.ones(1), jnp.ones(1))
     
     if observable.lower() == 'homo_lumo' or observable.lower() == 'hl':
         R_XY = R_XY_AA
