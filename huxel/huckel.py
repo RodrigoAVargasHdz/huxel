@@ -42,7 +42,7 @@ def f_homo_lumo(params,molecule,f_beta):
 
 def polarizability_pred(params,batch,f_beta, external_field = None):
     z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
-    y_pred = z_pred * params["pol_params"]["b"]
+    y_pred = z_pred + params["pol_params"]["b"]
     return y_pred,z_pred,y_true
 
 def f_polarizability_batch(params,batch,f_beta, external_field = None):

@@ -130,8 +130,8 @@ def random_pytrees(_pytree:dict, key:PRNGKey, minval:float=-1.0, maxval:float=1.
 
 def get_init_params_homo_lumo():
     params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
-    alpha = params_lr.item()["alpha"] * jnp.ones(1)
-    beta = params_lr.item()["beta"]
+    alpha = jnp.array([-2.610098557667966]) #params_lr.item()["alpha"] * jnp.ones(1)
+    beta = jnp.array([1.6562294892028724]) #params_lr.item()["beta"]
     return jnp.array(alpha), jnp.array(beta)
 
 
@@ -192,7 +192,6 @@ def get_params_bool(params_wdecay_:dict):
             params_bool[pb] = jnp.ones(params[pb].shape, dtype=bool)
 
     return params_bool
-
 
 def get_random_params(files:dict, key:PRNGKey):
     if not os.path.isfile(files["f_w"]):
