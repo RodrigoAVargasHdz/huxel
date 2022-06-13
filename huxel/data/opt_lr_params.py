@@ -6,8 +6,8 @@ import jax.numpy as jnp
 import numpy as onp
 
 from scipy import stats
-# from sklearn import datasets, linear_model
-# from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib 
+import matplotlib.pyplot as plt
 
 from huxel.data_utils import get_tr_val_data, batch_to_list_class
 from huxel.utils import get_files_names, get_default_params
@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 def optimize_parameters(obs:str):
 
-    n_tr = 101
+    n_tr = 5000
     batch_size = 128
     l = 0
     beta = 'c'
@@ -46,24 +46,21 @@ def optimize_parameters(obs:str):
     y_pred,z_pred, y_true = f_obs(params0,batch_tr)
 
     x = z_pred#[:,onp.newaxis]
-    y = y_pred#[:,onp.newaxis]
+    y = y_true#[:,onp.newaxis]
     print(y.shape,x.shape)
 
     res = stats.linregress(x, y)
-    print(res.slope)
-    print(res.intercept)
+    print(f'Obs = {obs}')
+    print(f'slope = {res.slope}')
+    print(f'intercept = {res.intercept}')
 
-    # # Create linear regression object
-    # regr = linear_model.LinearRegression()
-
-    # # Train the model using the training sets
-    # regr.fit(x, y)
-
-
-    # # The coefficients
-    # print("Coefficients: \n", regr.coef_)
-    # print(regr.get_params())
+    plt.figure(0)
+    plt.scatter(z_pred,y_true)
+    plt.ylabel('DFT')
+    plt.xlabel('Polarizability')
+    plt.savefig(f'fig_huckel_vs_DFT_{obs}.png')
 
 if __name__ == "__main__":
 
-    optimize_parameters('homo_lumo')
+    # optimize_parameters('homo_lumo')
+    optimize_parameters('polarizability') 

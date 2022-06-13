@@ -130,8 +130,15 @@ def random_pytrees(_pytree:dict, key:PRNGKey, minval:float=-1.0, maxval:float=1.
 
 def get_init_params_homo_lumo():
     params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
-    alpha = jnp.array([-2.610098557667966]) #params_lr.item()["alpha"] * jnp.ones(1)
-    beta = jnp.array([1.6562294892028724]) #params_lr.item()["beta"]
+    alpha = jnp.array([-2.252276274030775]) #params_lr.item()["alpha"] * jnp.ones(1)
+    beta = jnp.array([2.053257355175381]) #params_lr.item()["beta"]
+    return jnp.array(alpha), jnp.array(beta)
+
+
+def get_init_params_polarizability():
+    params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
+    alpha = jnp.ones(1)
+    beta = jnp.array([116.20943344747411]) #params_lr.item()["beta"]
     return jnp.array(alpha), jnp.array(beta)
 
 
