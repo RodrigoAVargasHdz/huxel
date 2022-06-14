@@ -111,7 +111,7 @@ def print_tail(files:dict):
 #     PARAMETERS
 def load_pre_opt_params(files:dict):
     if os.path.isfile(files["f_loss_opt"]):
-        D = jnp.load(files["f_loss_opt"], allow_pickle=True)
+        D = onp.load(files["f_loss_opt"], allow_pickle=True)
         epochs = D.item()["epoch"]
         loss_tr = D.item()["loss_tr"]
         loss_val = D.item()["loss_val"]
