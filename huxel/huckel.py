@@ -104,7 +104,9 @@ def _construct_huckel_matrix(params,molecule,f_beta):
 
 def _construct_huckel_matrix_field(molecule,field):
     # atom_types = molecule.atom_types   
-    xyz = molecule.xyz
+    # xyz = molecule.xyz
+    xyz = molecule.xyz_Bohr
+    
     # diagonal terms
     diag_ri = jnp.asarray([jnp.diag(xyz[:,i])for i in range(3)])
     field_r = lambda fi,xi: fi*xi

@@ -108,6 +108,7 @@ def batch_to_list_class(batch:Any, obs:str='homo_lumo'):
         )
         if obs.lower() == 'polarizability' or obs.lower() == "pol":
             m.get_dm_AA_to_Bohr()
+            m.get_xyz_AA_to_Bohr()
 
         batch_.append(m)
     return batch_

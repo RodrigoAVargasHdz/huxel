@@ -129,16 +129,16 @@ def random_pytrees(_pytree:dict, key:PRNGKey, minval:float=-1.0, maxval:float=1.
 
 
 def get_init_params_homo_lumo():
-    params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
+    # params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
     alpha = jnp.array([-2.252276274030775]) #params_lr.item()["alpha"] * jnp.ones(1)
     beta = jnp.array([2.053257355175381]) #params_lr.item()["beta"]
     return jnp.array(alpha), jnp.array(beta)
 
 
 def get_init_params_polarizability():
-    params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
+    # params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
     alpha = jnp.ones(1)
-    beta = jnp.array([116.20943344747411]) #params_lr.item()["beta"]
+    beta = jnp.array([116.85390527250595]) #params_lr.item()["beta"]
     return jnp.array(alpha), jnp.array(beta)
 
 
@@ -173,7 +173,7 @@ def get_default_params(observable:str="homo_lumo"):
     if observable.lower() == 'homo_lumo' or observable.lower() == 'hl':
         R_XY = R_XY_AA
         Y_XY = Y_XY_AA
-    elif observable.lower() == 'homo_lumo' or observable.lower() == 'hl':
+    elif observable.lower() == 'polarizability' or observable.lower() == 'pol':
         R_XY = R_XY_Bohr
         Y_XY = Y_XY_Bohr
 
@@ -285,35 +285,35 @@ def get_external_field(observable:str='homo_lumo',magnitude:Any=0.):
         return None   
 
 @jit
-def update_h_x(h_x):
+def update_h_x(h_x:dict):
     xc = h_x["C"]
     xc_tree = jax.tree_unflatten(h_x_tree, xc * jnp.ones_like(jnp.array(h_x_flat)))
     return jax.tree_map(f_dif_pytrees, xc_tree, h_x)
 
 @jit
-def update_h_xy(h_xy):
+def update_h_xy(h_xy:dict):
     key = frozenset(["C", "C"])
     xcc = h_xy[key]
     xcc_tree = jax.tree_unflatten(h_xy_tree, xcc * jnp.ones_like(jnp.array(h_xy_flat)))
     return jax.tree_map(f_div_pytrees, xcc_tree, h_xy)
 
 @jit
-def update_h_x_au_to_eV(h_x, pol_a):
+def update_h_x_au_to_eV(h_x:dict, pol_a:Any):
     x_tree = jax.tree_unflatten(h_x_tree, (pol_a/au_to_eV) * jnp.ones_like(jnp.array(h_x_flat)))
     return jax.tree_map(f_mult_pytrees, x_tree, h_x)
 
 @jit
-def update_h_xy_au_to_eV(h_xy, pol_a):
+def update_h_xy_au_to_eV(h_xy:dict, pol_a:Any):
     xy_tree = jax.tree_unflatten(h_xy_tree, (pol_a/au_to_eV) * jnp.ones_like(jnp.array(h_xy_flat)))
     return jax.tree_map(f_mult_pytrees, xy_tree, h_xy)
 
 @jit
-def update_r_xy_Bohr_to_AA(r_xy):
+def update_r_xy_Bohr_to_AA(r_xy:dict):
     xy_tree = jax.tree_unflatten(r_xy_tree, (Bohr_to_AA) * jnp.ones_like(jnp.array(r_xy_flat)))
     return jax.tree_map(f_div_pytrees, xy_tree, r_xy)
 
 @jit
-def normalize_params_wrt_C(params):
+def normalize_params_wrt_C(params:dict):
     h_x =  update_h_x(params["h_x"])
     h_xy = update_h_xy(params["h_xy"])
 
@@ -330,7 +330,7 @@ def normalize_params_wrt_C(params):
     return new_params
 
 @jit
-def normalize_params_polarizability(params):
+def normalize_params_polarizability(params:dict):
     params_norm_c = normalize_params_wrt_C(params)
     pol_a = params_norm_c["pol_params"]["a"]
 
