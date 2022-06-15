@@ -74,14 +74,9 @@ def f_energy(params,molecule,f_beta, external_field = None):
 
 # -------
 def _construct_huckel_matrix(params,molecule,f_beta):
-    # atom_types,conectivity_matrix = molecule 
     atom_types = molecule.atom_types
     conectivity_matrix = molecule.conectivity_matrix
     dm = molecule.dm
-    # atom_types = molecule['atom_types']
-    # conectivity_matrix = molecule['conectivity_matrix']
-    # h_x, h_xy, r_xy, y_xy = params
-    h_x = params['h_x']
 
     huckel_matrix = jnp.zeros_like(conectivity_matrix,dtype=jnp.float32)
     # off diagonal terms

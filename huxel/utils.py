@@ -244,7 +244,7 @@ def get_random_params(files:dict, key:PRNGKey):
 def get_init_params(files:dict, obs:str="homo_lumo"):
     params_init = get_default_params()
     if os.path.isfile(files["f_w"]):
-        params = jnp.load(files["f_w"], allow_pickle=True)
+        params = onp.load(files["f_w"], allow_pickle=True)
         print(files["f_w"])
         # params_lr,params_coulson = params
         hl_a = params.item()["hl_params"]["a"]

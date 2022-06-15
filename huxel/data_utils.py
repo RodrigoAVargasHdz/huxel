@@ -52,7 +52,7 @@ def split_trainig_test(N:int, key:PRNGKey, D:Any=None):
     N_tot = len(D)
 
     # % of the total data
-    if N <= 100:
+    if N <= 99:
         N = int(N_tot * N / 100)
 
     n_val = N + 1000  # extra 1000 points for validation

@@ -58,7 +58,7 @@ def _optimization(
     )
 
     # change D-val for list of myMolecules
-    batch_val = batch_to_list_class(D_val)
+    batch_val = batch_to_list_class(D_val, obs)
 
     # initialize parameters
     if bool_randW:
@@ -95,7 +95,7 @@ def _optimization(
         start_time_epoch = time.time()
         loss_tr_epoch = []
         for _ in range(n_batches):
-            batch = batch_to_list_class(next(batches))
+            batch = batch_to_list_class(next(batches), obs)
             params, opt_state, loss_tr = train_step(params, opt_state, batch)
             loss_tr_epoch.append(loss_tr)
 

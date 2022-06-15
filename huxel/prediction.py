@@ -15,7 +15,7 @@ from huxel.utils import (
 from jax.config import config
 
 jax.config.update("jax_enable_x64", True)
-
+jax.config.update('jax_disable_jit', True)
 
 def _pred(obs:str="homo_lumo", n_tr:int=50, l:int=0, beta:str="exp", bool_randW:bool=False):
 
