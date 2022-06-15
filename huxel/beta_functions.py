@@ -11,11 +11,11 @@ def _beta_abs_r_exp(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = (1./y_ref)*(jnp.abs(r-r_ref))
     return beta_ref * jnp.exp(-z)
 
-def _beta_r_linear(beta_ref,r_ref,y_ref,r):
+def _beta_r_linear(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = 1. - (1./y_ref)*(r-r_ref)
     return beta_ref * z
 
-def _beta_abs_r_linear(beta_ref,r_ref,y_ref,r):
+def _beta_abs_r_linear(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = 1. - (1./y_ref)*(jnp.abs(r-r_ref))
     return beta_ref * z
 
