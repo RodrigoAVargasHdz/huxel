@@ -4,6 +4,16 @@ import numpy as onp
 import jax
 import jax.numpy as jnp
 
+
+au_to_eV = 27.211
+Bohr_to_AA = 0.529177
+
+f_div_pytrees = lambda x, y: y/x
+f_dif_pytrees = lambda x, y: y-x
+f_sum_pytrees = lambda x, y: y+x
+f_mult_pytrees = lambda x, y: y*x
+
+
 BEVERIDGE_HINZE = {
     "gamma_xy": "beveridge-hinze",
     "exponent": "beveridge-hinze",
@@ -238,7 +248,7 @@ h_x_flat, h_x_tree = jax.tree_util.tree_flatten(H_X)
     #         'N1':{'N1':1.27}}
 
 H_XY ={
-frozenset(["B", "B"]): 0.87,
+        frozenset(["B", "B"]): 0.87,
         frozenset(["B", "C"]): 0.73,
         frozenset(["B", "Cl"]): 0.41,
         frozenset(["B", "F"]): 0.26,
@@ -335,12 +345,13 @@ h_xy_flat, h_xy_tree = jax.tree_util.tree_flatten(H_XY)
 # R_XY = H_XY
 Y_XY = H_XY
 y_xy_flat, y_xy_tree = jax.tree_util.tree_flatten(Y_XY)
-Y_XY = jax.tree_util.tree_unflatten(y_xy_tree,0.3*jnp.ones((len(y_xy_flat),)))
 
+Y_XY_AA = Y_XY = jax.tree_util.tree_unflatten(y_xy_tree,(0.3)*jnp.ones((len(y_xy_flat),))) 
+Y_XY_Bohr = jax.tree_util.tree_unflatten(y_xy_tree,(0.3/Bohr_to_AA)*jnp.ones((len(y_xy_flat),))) 
 
 # J. Chem. Soc. Perkin Trans. II, S1–S19, 1987.
 R_XY ={
-frozenset(["B", "B"]): 1.775,
+        frozenset(["B", "B"]): 1.775,
         frozenset(["B", "C"]): 1.716,
         frozenset(["B", "Cl"]): 1.751,
         frozenset(["B", "F"]): 1.366,
@@ -433,10 +444,13 @@ frozenset(["B", "B"]): 1.775,
         frozenset(["Si", "Si"]): 2.359,
     }
 
+r_xy_flat, r_xy_tree = jax.tree_util.tree_flatten(R_XY)
+R_XY_AA = R_XY
+R_XY_Bohr = jax.tree_util.tree_unflatten(r_xy_tree,(1./Bohr_to_AA)*jnp.ones((len(r_xy_flat),))) 
 
 # Values taken from https://cccbdb.nist.gov/diatomicexpbondx.asp
 R_XY_diatomics_NIST ={
-frozenset(["B", "B"]): 1.590,
+        frozenset(["B", "B"]): 1.590,
         frozenset(["B", "C"]): 1.491,
         frozenset(["B", "Cl"]): 1.719,
         frozenset(["B", "F"]): 1.267,
@@ -528,26 +542,3 @@ frozenset(["B", "B"]): 1.590,
         frozenset(["S2", "Si"]): 1.929,
         frozenset(["Si", "Si"]): 2.246,
     }
-
-f_div_pytrees = lambda x, y: y/x
-f_dif_pytrees = lambda x, y: y-x
-def update_h_x(h_x):
-    xc = h_x['C']
-    xc_tree = jax.tree_unflatten(h_x_tree,xc*jnp.ones_like(jnp.array(h_x_flat)))
-    return jax.tree_map(f_dif_pytrees,xc_tree, h_x)
-
-
-def update_h_xy(h_xy):
-    key = frozenset(['C', 'C'])
-    xcc = h_xy[key]
-    xcc_tree = jax.tree_unflatten(h_xy_tree,xcc*jnp.ones_like(jnp.array(h_xy_flat)))
-    return jax.tree_map(f_div_pytrees,xcc_tree, h_xy)
-
-def update_params_all(params_all):
-    params_lr,params_c = params_all
-    h_x, h_xy, r_xy, y_xy = params_c
-    h_x = update_h_x(h_x)
-    h_xy = update_h_xy(h_xy)
-    params_c = (h_x, h_xy, r_xy, y_xy)
-    params_all = (params_lr,params_c)
-    return params_all

@@ -3,26 +3,26 @@ import jax.numpy as jnp
 from jax import lax
 
 
-def _beta_r_exp(beta_ref,r_ref,y_ref,r):
+def _beta_r_exp(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = (1./y_ref)*(r-r_ref)
     return beta_ref * jnp.exp(-z)
 
-def _beta_abs_r_exp(beta_ref,r_ref,y_ref,r):
+def _beta_abs_r_exp(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = (1./y_ref)*(jnp.abs(r-r_ref))
     return beta_ref * jnp.exp(-z)
 
-def _beta_r_linear(beta_ref,r_ref,y_ref,r):
+def _beta_r_linear(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = 1. - (1./y_ref)*(r-r_ref)
     return beta_ref * z
 
-def _beta_abs_r_linear(beta_ref,r_ref,y_ref,r):
+def _beta_abs_r_linear(beta_ref:float,r_ref:float,y_ref:float,r:float):
     z = 1. - (1./y_ref)*(jnp.abs(r-r_ref))
     return beta_ref * z
 
-def _beta0(beta_ref):
+def _beta0(beta_ref:float):
     return beta_ref
 
-def _f_beta(method):
+def _f_beta(method:str):
     if method == 'exp':
         def wrapper(*args):
             return _beta_r_exp(*args)

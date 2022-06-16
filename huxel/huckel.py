@@ -1,3 +1,4 @@
+from tkinter import E
 import jax
 import jax.numpy as jnp
 from jax import random
@@ -6,25 +7,24 @@ from jax.tree_util import tree_flatten, tree_unflatten, tree_multimap
 
 from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
+from huxel.utils import normalize_params_wrt_C, normalize_params_polarizability
 
-def linear_model_pred(params_tot,batch,f_beta):
-    params_lr, params = params_tot
-    alpha,beta = params_lr
-
-    z_pred,y_true = f_homo_lumo_gap_batch(params,batch,f_beta)
-    y_pred = beta*z_pred + alpha
+# -------
+def homo_lumo_pred(params,batch,f_beta):
+    z_pred,y_true = f_homo_lumo_batch(params,batch,f_beta)
+    y_pred = params["hl_params"]["a"]*z_pred + params["hl_params"]["b"]
     return y_pred,z_pred,y_true
 
-def f_homo_lumo_gap_batch(params,batch,f_beta):
+def f_homo_lumo_batch(params,batch,f_beta):
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
-        yi,_ = f_homo_lumo_gap(params,m,f_beta)
+        yi,_ = f_homo_lumo(params,m,f_beta)
         y_pred = jnp.append(y_pred,yi)   
         y_true = jnp.append(y_true,m.homo_lumo_grap_ref)   
     return y_pred[1:],y_true[1:]
 
-def f_homo_lumo_gap(params,molecule,f_beta):
+def f_homo_lumo(params,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule
     h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
     e_,_ = _solve(h_m)
@@ -39,15 +39,44 @@ def f_homo_lumo_gap(params,molecule,f_beta):
     val = lumo_energy - homo_energy
     return val,(h_m,e_)
 # -------
+
+def polarizability_pred(params,batch,f_beta, external_field = None):
+    z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
+    y_pred = z_pred + params["pol_params"]["b"]
+    return y_pred,z_pred,y_true
+
+def f_polarizability_batch(params,batch,f_beta, external_field = None):
+    y_pred = jnp.ones(1)
+    y_true = jnp.ones(1)
+    for m in batch:
+        yi = f_polarizability(params,m,f_beta, external_field)
+        y_pred = jnp.append(y_pred,yi)   
+        y_true = jnp.append(y_true,m.polarizability_ref)   
+    return y_pred[1:], y_true[1:]
+
+def f_polarizability(params,molecule,f_beta, external_field = None):
+    polarizability_tensor = jax.hessian(f_energy,argnums=(3))(params,molecule,f_beta,external_field)
+    polarizability = (1/3.)*jnp.trace(polarizability_tensor)
+    return polarizability
+
+def f_energy(params,molecule,f_beta, external_field = None):
+    h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
+
+    if external_field != None:
+        h_m_field =  _construct_huckel_matrix_field(molecule,external_field)
+        h_m = h_m + h_m_field
+    
+    e_,_ = _solve(h_m)
+
+    n_orbitals = h_m.shape[0]
+    occupations, spin_occupations, n_occupied, n_unpaired = _set_occupations(jax.lax.stop_gradient(electrons),jax.lax.stop_gradient(e_),jax.lax.stop_gradient(n_orbitals))
+    return jnp.dot(occupations,e_)
+
+# -------
 def _construct_huckel_matrix(params,molecule,f_beta):
-    # atom_types,conectivity_matrix = molecule 
     atom_types = molecule.atom_types
     conectivity_matrix = molecule.conectivity_matrix
     dm = molecule.dm
-    # atom_types = molecule['atom_types']
-    # conectivity_matrix = molecule['conectivity_matrix']
-    h_x, h_xy, r_xy, y_xy = params
-
 
     huckel_matrix = jnp.zeros_like(conectivity_matrix,dtype=jnp.float32)
     # off diagonal terms
@@ -56,17 +85,29 @@ def _construct_huckel_matrix(params,molecule,f_beta):
         atom_type_j = atom_types[j]
         key = frozenset([atom_type_i, atom_type_j])
 
-        beta_ = f_beta(h_xy[key],r_xy[key],y_xy[key],dm[i,j])
+        beta_ = f_beta(params['h_xy'][key],params['r_xy'][key],params['y_xy'][key],dm[i,j])
         
         huckel_matrix = huckel_matrix.at[i,j].set(beta_)
 
     # diagonal terms
-    diag = jnp.stack([h_x[c] for c in atom_types])
+    diag = jnp.stack([params['h_x'][c] for c in atom_types])
     huckel_matrix = huckel_matrix + jnp.diag(diag.ravel())
     
     electrons = _electrons(atom_types)
 
     return huckel_matrix, electrons
+
+def _construct_huckel_matrix_field(molecule,field):
+    # atom_types = molecule.atom_types   
+    # xyz = molecule.xyz
+    xyz = molecule.xyz_Bohr
+    
+    # diagonal terms
+    diag_ri = jnp.asarray([jnp.diag(xyz[:,i])for i in range(3)])
+    field_r = lambda fi,xi: fi*xi
+    diag_ri_tensor = vmap(field_r,in_axes=(0,0))(field,diag_ri)
+    diag_ri = jnp.sum(diag_ri_tensor,axis=0)
+    return diag_ri
 
 def _electrons(atom_types):
     return jnp.stack([N_ELECTRONS[atom_type] for atom_type in atom_types])
@@ -149,7 +190,7 @@ def main_test():
     molec = myMolecule('test',atom_types,conectivity_matrix,1.)
       
     # test single molecule
-    v,g = value_and_grad(f_homo_lumo_gap,has_aux=True,)(params,molec)
+    v,g = value_and_grad(f_homo_lumo,has_aux=True,)(params,molec)
     print('HOMO-LUMO')
     homo_lumo_val, _ = v
     print(homo_lumo_val)
