@@ -37,7 +37,7 @@ def _f_observable(observable:str, beta:str, external_field:Any = None):
         return wrapper  
 
 
-def loss_rmse(params_tot:Dict,batch:Any,f_obs:Callable):
+def loss_rmse(params_tot:Dict, batch:Any, f_obs:Callable):
     
     # params_tot = update_params_all(params_tot) # Carbon normalization
     y_pred, z_pred, y_true = f_obs(params_tot, batch)

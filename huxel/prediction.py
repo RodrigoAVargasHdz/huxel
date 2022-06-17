@@ -7,10 +7,10 @@ from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.observables import _f_observable
 from huxel.utils import (
     get_external_field,
-    get_files_names,
     get_init_params,
     get_default_params,
 )
+from huxel.outfiles_utils import get_files_names
 
 from jax.config import config
 

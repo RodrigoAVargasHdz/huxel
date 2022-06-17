@@ -61,10 +61,12 @@ def split_trainig_test(N:int, key:PRNGKey, D:Any=None):
     N_tst = N_tot - N
 
     j_ = jnp.arange(N_tot)
-    j_ = jax.random.shuffle(key, j_, axis=0)
-    D_tr = D[:N]
-    D_val = D[N:n_val]
+    j_ = jax.random.permutation(key, j_, axis=0)
+    j_tr = j_[:N]
+    j_val = j_[N:n_val]
 
+    D_tr = D[j_tr]
+    D_val = D[j_val]
     return D_tr, D_val
 
 

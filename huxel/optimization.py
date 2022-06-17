@@ -11,14 +11,14 @@ import optax
 
 from huxel.data_utils import get_tr_val_data
 from huxel.utils import (
-    get_files_names,
     get_init_params,
     get_random_params,
     get_params_bool,
 )
-from huxel.utils import print_head, print_tail, get_params_file_itr
+from huxel.outfiles_utils import get_files_names,  print_head, print_tail, get_params_file_itr
 from huxel.data_utils import save_tr_and_val_loss, batch_to_list_class
 from huxel.observables import _f_observable, _loss_function, _preprocessing_params
+
 
 from jax.config import config
 jax.config.update("jax_enable_x64", True)
@@ -78,6 +78,7 @@ def _optimization(
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
     optimizer = optax.adamw(learning_rate=lr, mask=params_bool)
+    
     opt_state = optimizer.init(params_init)
     params = params_init
 

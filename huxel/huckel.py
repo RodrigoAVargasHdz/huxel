@@ -1,4 +1,5 @@
-from tkinter import E
+from typing import Any, Callable
+
 import jax
 import jax.numpy as jnp
 from jax import random
@@ -10,12 +11,12 @@ from huxel.molecule import myMolecule
 from huxel.utils import normalize_params_wrt_C, normalize_params_polarizability
 
 # -------
-def homo_lumo_pred(params,batch,f_beta):
+def homo_lumo_pred(params:dict,batch:Any,f_beta:Callable):
     z_pred,y_true = f_homo_lumo_batch(params,batch,f_beta)
     y_pred = params["hl_params"]["a"]*z_pred + params["hl_params"]["b"]
     return y_pred,z_pred,y_true
 
-def f_homo_lumo_batch(params,batch,f_beta):
+def f_homo_lumo_batch(params:dict,batch:Any,f_beta:Callable):
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
@@ -24,7 +25,7 @@ def f_homo_lumo_batch(params,batch,f_beta):
         y_true = jnp.append(y_true,m.homo_lumo_grap_ref)   
     return y_pred[1:],y_true[1:]
 
-def f_homo_lumo(params,molecule,f_beta):
+def f_homo_lumo(params:dict,molecule,f_beta):
     # atom_types,conectivity_matrix = molecule
     h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
     e_,_ = _solve(h_m)
@@ -40,12 +41,12 @@ def f_homo_lumo(params,molecule,f_beta):
     return val,(h_m,e_)
 # -------
 
-def polarizability_pred(params,batch,f_beta, external_field = None):
+def polarizability_pred(params:dict,batch, f_beta:Callable, external_field:Any = None):
     z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
     y_pred = z_pred + params["pol_params"]["b"]
     return y_pred,z_pred,y_true
 
-def f_polarizability_batch(params,batch,f_beta, external_field = None):
+def f_polarizability_batch(params:dict, batch:Any, f_beta:callable, external_field:Any = None):
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
@@ -54,12 +55,12 @@ def f_polarizability_batch(params,batch,f_beta, external_field = None):
         y_true = jnp.append(y_true,m.polarizability_ref)   
     return y_pred[1:], y_true[1:]
 
-def f_polarizability(params,molecule,f_beta, external_field = None):
+def f_polarizability(params:dict,molecule:Any, f_beta:callable, external_field:Any = None):
     polarizability_tensor = jax.hessian(f_energy,argnums=(3))(params,molecule,f_beta,external_field)
     polarizability = (1/3.)*jnp.trace(polarizability_tensor)
     return polarizability
 
-def f_energy(params,molecule,f_beta, external_field = None):
+def f_energy(params:dict,molecule:Any, f_beta:Callable, external_field:Any = None):
     h_m,electrons = _construct_huckel_matrix(params,molecule,f_beta)
 
     if external_field != None:
@@ -73,10 +74,10 @@ def f_energy(params,molecule,f_beta, external_field = None):
     return jnp.dot(occupations,e_)
 
 # -------
-def _construct_huckel_matrix(params,molecule,f_beta):
+def _construct_huckel_matrix(params:dict,molecule,f_beta:Callable,bool_AA_to_Bhor:bool=True):
     atom_types = molecule.atom_types
     conectivity_matrix = molecule.conectivity_matrix
-    dm = molecule.dm
+    dm = molecule.dm  #CHECK THIS FOR POLARIZABILITY UNITS PROBLEM OR f_BETA(R) FUNCTIONS!!
 
     huckel_matrix = jnp.zeros_like(conectivity_matrix,dtype=jnp.float32)
     # off diagonal terms
@@ -97,7 +98,7 @@ def _construct_huckel_matrix(params,molecule,f_beta):
 
     return huckel_matrix, electrons
 
-def _construct_huckel_matrix_field(molecule,field):
+def _construct_huckel_matrix_field(molecule:Any,field:Any):
     # atom_types = molecule.atom_types   
     # xyz = molecule.xyz
     xyz = molecule.xyz_Bohr
@@ -109,17 +110,17 @@ def _construct_huckel_matrix_field(molecule,field):
     diag_ri = jnp.sum(diag_ri_tensor,axis=0)
     return diag_ri
 
-def _electrons(atom_types):
+def _electrons(atom_types:list):
     return jnp.stack([N_ELECTRONS[atom_type] for atom_type in atom_types])
 
-def _solve(huckel_matrix):
+def _solve(huckel_matrix:Any):
     eig_vals,eig_vects = jnp.linalg.eigh(huckel_matrix)
     return eig_vals[::-1],eig_vects.T[::-1, :]
 
-def _get_multiplicty(n_electrons):
+def _get_multiplicty(n_electrons:int):
     return (n_electrons % 2) + 1
 
-def _set_occupations(electrons,energies,n_orbitals):
+def _set_occupations(electrons:int,energies:Any,n_orbitals:int):
     charge = 0
     n_dec_degen = 3
     n_electrons = jnp.sum(electrons) - charge
