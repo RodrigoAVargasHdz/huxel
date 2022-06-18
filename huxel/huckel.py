@@ -41,7 +41,7 @@ def f_homo_lumo(params:dict,molecule,f_beta):
     return val,(h_m,e_)
 # -------
 
-def polarizability_pred(params:dict,batch, f_beta:Callable, external_field:Any = None):
+def polarizability_pred(params:dict,batch:Any, f_beta:Callable, external_field:Any = None):
     z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
     y_pred = z_pred + params["pol_params"]["b"]
     return y_pred,z_pred,y_true
