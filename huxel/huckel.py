@@ -10,6 +10,10 @@ from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
 from huxel.utils import normalize_params_wrt_C, normalize_params_polarizability
 
+from jax.config import config
+jax.config.update("jax_enable_x64", True)
+jax.config.update('jax_disable_jit', True)
+
 # -------
 def homo_lumo_pred(params:dict,batch:Any,f_beta:Callable):
     z_pred,y_true = f_homo_lumo_batch(params,batch,f_beta)
@@ -43,7 +47,7 @@ def f_homo_lumo(params:dict,molecule,f_beta):
 
 def polarizability_pred(params:dict,batch:Any, f_beta:Callable, external_field:Any = None):
     z_pred,y_true = f_polarizability_batch(params,batch,f_beta, external_field)
-    y_pred = z_pred + params["pol_params"]["b"]
+    y_pred = z_pred # + params["pol_params"]["b"]
     return y_pred,z_pred,y_true
 
 def f_polarizability_batch(params:dict, batch:Any, f_beta:callable, external_field:Any = None):

@@ -37,10 +37,10 @@ class myMolecule:
     def get_dm_AA_to_Bohr(self):
         z = self.xyz[:, None] - self.xyz[None, :]
         dm = jnp.linalg.norm(z, axis=2)  # compute the bond length      
-        self.dm = jnp.divide(dm, Bohr_to_AA) # Bohr -> AA
+        self.dm = jnp.divide(dm, Bohr_to_AA) # AA --> Bohr
 
     def get_xyz_AA_to_Bohr(self):    
-        self.xyz_Bohr = jnp.divide(self.xyz, Bohr_to_AA) # Bohr -> AA
+        self.xyz_Bohr = jnp.divide(self.xyz, Bohr_to_AA) # AA --> Bohr
         
 
 

@@ -50,7 +50,7 @@ def get_init_params_homo_lumo():
 def get_init_params_polarizability():
     # params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
     alpha = jnp.ones(1)
-    beta = jnp.array([116.85390527250595]) #params_lr.item()["beta"]
+    beta = jnp.zeros(1) # jnp.array([116.85390527250595]) #params_lr.item()["beta"]
     return jnp.array(alpha), jnp.array(beta)
 
 
@@ -249,7 +249,8 @@ def normalize_params_wrt_C(params:dict):
 
 @jit
 def normalize_params_polarizability(params:dict):
-    params_norm_c = normalize_params_wrt_C(params)
+    # params_norm_c = normalize_params_wrt_C(params)
+    params_norm_c = params
     pol_a = params_norm_c["pol_params"]["a"]
 
     h_x = update_h_x_au_to_eV(params_norm_c["h_x"], pol_a)

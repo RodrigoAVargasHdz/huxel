@@ -22,6 +22,7 @@ from huxel.observables import _f_observable, _loss_function, _preprocessing_para
 
 from jax.config import config
 jax.config.update("jax_enable_x64", True)
+jax.config.update('jax_disable_jit', True)
 
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
 def _optimization(

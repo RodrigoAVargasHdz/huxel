@@ -37,7 +37,7 @@ def _pred(obs:str="homo_lumo", n_tr:int=50, l:int=0, beta:str="exp", bool_randW:
 
     # get data
     _, D = get_raw_data()
-    D = batch_to_list_class(D)
+    D = batch_to_list_class(D, obs)
 
     # prediction
     f_pred = _f_observable(obs, beta, external_field)

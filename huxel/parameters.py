@@ -261,7 +261,7 @@ H_XY ={
         frozenset(["B", "S1"]): 0.51,
         frozenset(["B", "S2"]): 0.44,
         frozenset(["B", "Si"]): 0.57,
-        frozenset(["C", "C"]): 1.00,
+        frozenset(["C", "C"]): 2.4, #1.00, #NEW TEST
         frozenset(["C", "Cl"]): 0.62,
         frozenset(["C", "F"]): 0.52,
         frozenset(["C", "N1"]): 1.02,
