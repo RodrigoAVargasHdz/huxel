@@ -10,7 +10,9 @@ import numpy as onp
 
 # --------------------------------
 #     FILES
-def get_r_dir_old(method:str):
+
+
+def get_r_dir_old(method: str):
     if method == "exp":
         return "./Results_xyz/"
     elif method == "linear":
@@ -23,7 +25,7 @@ def get_r_dir_old(method:str):
         return "./Results_xyz_constant_random_params/"
 
 
-def get_r_dir(method:str, bool_randW:bool):
+def get_r_dir(method: str, bool_randW: bool):
     if bool_randW:
         r_dir = "./Results_{}_randW/".format(method)
     else:
@@ -34,7 +36,7 @@ def get_r_dir(method:str, bool_randW:bool):
     return r_dir
 
 
-def get_files_names(obs:str, N:int, l:int, beta:str, randW:bool, opt_name:str="Adam"):
+def get_files_names(obs: str, N: int, l: int, beta: str, randW: bool, opt_name: str = "Adam"):
     # r_dir = './Results_xyz/'
     r_dir = get_r_dir(beta, randW)
 
@@ -58,7 +60,7 @@ def get_files_names(obs:str, N:int, l:int, beta:str, randW:bool, opt_name:str="A
     return files
 
 
-def get_params_file_itr(files:dict, itr:int):
+def get_params_file_itr(files: dict, itr: int):
     # r_dir = './Results_xyz/'
     f_job = files["f_job"]
     r_dir = files["r_dir"]
@@ -69,7 +71,7 @@ def get_params_file_itr(files:dict, itr:int):
 # --------------------------------
 #     HEAD OF FILE
 def print_head(
-    files:dict, obs:str, N:int, l:int, lr:float, w_decay:Any, n_epochs:int, batch_size:int, opt_name:str, beta:str, list_Wdecay:list
+    files: dict, obs: str, N: int, l: int, lr: float, w_decay: Any, n_epochs: int, batch_size: int, opt_name: str, beta: str, list_Wdecay: list
 ):
     f = open(files["f_out"], "a+")
     print("-----------------------------------", file=f)
@@ -90,7 +92,7 @@ def print_head(
 
 
 #     TAIL OF FILE
-def print_tail(files:dict):
+def print_tail(files: dict):
     f = open(files["f_out"], "a+")
     print("-----------------------------------", file=f)
     print("Finish time", file=f)

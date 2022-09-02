@@ -10,21 +10,25 @@ import jax.numpy as jnp
 from huxel.molecule import myMolecule
 from huxel.utils import load_pre_opt_params
 
-PRNGKey = Any 
+PRNGKey = Any
 
-def get_raw_data(r_data:str='/u/rvargas/huxel_data_kjorner'):
+
+def get_raw_data(r_data: str = 'huxel/data/'):  # '/u/rvargas/huxel_data_kjorner'
     return (
         onp.load(
-            os.path.join(r_data,"gdb13_list_100000_hl-pol-xyz_training.npy"),
+            # ,"gdb13_list_100000_hl-pol-xyz_training.npy"
+            os.path.join(r_data, 'data_gdb13_training.npy'),
             allow_pickle=True,
         ),
         onp.load(
-            os.path.join(r_data,"gdb13_list_100000_hl-pol-xyz_test.npy"), allow_pickle=True
+            # "gdb13_list_100000_hl-pol-xyz_test.npy"
+            os.path.join(r_data, 'data_gdb13_test.npy'),
+            allow_pickle=True
         ),
     )
 
 
-def get_batches(Dtr:Any, batch_size:int, key:PRNGKey):
+def get_batches(Dtr: Any, batch_size: int, key: PRNGKey):
     # Dtr = get_data()
     # Xtr,ytr = Dtr
     N = len(Dtr)
@@ -38,7 +42,7 @@ def get_batches(Dtr:Any, batch_size:int, key:PRNGKey):
             # perm = rng.permutation(N)
             perm = jax.random.permutation(key, jnp.arange(N))
             for i in range(n_batches):
-                batch_idx = perm[i * batch_size : (i + 1) * batch_size]
+                batch_idx = perm[i * batch_size: (i + 1) * batch_size]
                 yield Dtr[batch_idx.tolist()]
 
     batches = data_stream()
@@ -46,7 +50,7 @@ def get_batches(Dtr:Any, batch_size:int, key:PRNGKey):
     return batches, n_batches
 
 
-def split_trainig_test(N:int, key:PRNGKey, D:Any=None):
+def split_trainig_test(N: int, key: PRNGKey, D: Any = None):
     if D is None:
         D, _ = get_raw_data()
     N_tot = len(D)
@@ -70,7 +74,7 @@ def split_trainig_test(N:int, key:PRNGKey, D:Any=None):
     return D_tr, D_val
 
 
-def get_tr_val_data(files:dict, n_tr:int, subkey:PRNGKey, batch_size:int):
+def get_tr_val_data(files: dict, n_tr: int, subkey: PRNGKey, batch_size: int):
     if os.path.isfile(files["f_data"]):
         _D = onp.load(files["f_data"], allow_pickle=True)
         D_tr = _D.item()["Training"]
@@ -87,13 +91,13 @@ def get_tr_val_data(files:dict, n_tr:int, subkey:PRNGKey, batch_size:int):
     return D_tr, D_val, batches, n_batches, subkey
 
 
-def data_normalization(y:Any):
+def data_normalization(y: Any):
     mu = jnp.mean(y)
     std = jnp.std(y)
     return mu, std
 
 
-def batch_to_list_class(batch:Any, obs:str='homo_lumo'):
+def batch_to_list_class(batch: Any, obs: str = 'homo_lumo'):
     #     pytree to class-myMolecule
     batch = batch_to_list(batch)
     batch_ = []
@@ -115,7 +119,8 @@ def batch_to_list_class(batch:Any, obs:str='homo_lumo'):
         batch_.append(m)
     return batch_
 
-def batch_to_list(batch:Any):
+
+def batch_to_list(batch: Any):
     # numpy array to list
     batch = batch.tolist()
     for b in batch:
@@ -124,7 +129,7 @@ def batch_to_list(batch:Any):
     return batch
 
 
-def save_tr_and_val_data(files:dict, D_tr:Any, D_val:Any, n_batches:int):
+def save_tr_and_val_data(files: dict, D_tr: Any, D_val: Any, n_batches: int):
     file = files["f_data"]
     D = {
         "Training": D_tr,
@@ -134,7 +139,7 @@ def save_tr_and_val_data(files:dict, D_tr:Any, D_val:Any, n_batches:int):
     jnp.save(file, D, allow_pickle=True)
 
 
-def save_tr_and_val_loss(files:dict, loss_tr:float, loss_val:float, n_epochs:int):
+def save_tr_and_val_loss(files: dict, loss_tr: float, loss_val: float, n_epochs: int):
     epochs = jnp.arange(n_epochs + 1)
     loss_tr_ = jnp.asarray(loss_tr).ravel()
     loss_val_ = jnp.asarray(loss_val).ravel()
@@ -153,4 +158,3 @@ def save_tr_and_val_loss(files:dict, loss_tr:float, loss_val:float, n_epochs:int
         # 'loss_test':loss_test,
     }
     jnp.save(files["f_loss_opt"], D, allow_pickle=True)
-

@@ -25,16 +25,18 @@ jax.config.update("jax_enable_x64", True)
 jax.config.update('jax_disable_jit', True)
 
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
+
+
 def _optimization(
-    obs:str='homo_lumo',
-    n_tr:int=1,
-    batch_size:int=100,
-    lr:float=2e-3,
-    l:int=0,
-    beta:str="exp",
-    list_Wdecay:list=None,
-    bool_randW:bool=False,
-    external_field:Any=None,
+    obs: str = 'homo_lumo',
+    n_tr: int = 1,
+    batch_size: int = 100,
+    lr: float = 2e-3,
+    l: int = 0,
+    beta: str = "exp",
+    list_Wdecay: list = None,
+    bool_randW: bool = False,
+    external_field: Any = None,
 ):
 
     # optimization parameters
@@ -79,14 +81,15 @@ def _optimization(
     # OPTAX ADAM
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
     optimizer = optax.adamw(learning_rate=lr, mask=params_bool)
-    
+
     opt_state = optimizer.init(params_init)
     params = params_init
 
     # @jit
     def train_step(params, optimizer_state, batch):
-        (loss,_), grads = grad_fn(params, batch)
-        updates, opt_state = optimizer.update(grads[0], optimizer_state, params)
+        (loss, _), grads = grad_fn(params, batch)
+        updates, opt_state = optimizer.update(
+            grads[0], optimizer_state, params)
         return optax.apply_updates(params, updates), opt_state, loss
 
     loss_val0 = 1e16
@@ -102,7 +105,7 @@ def _optimization(
             loss_tr_epoch.append(loss_tr)
 
         loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
-        loss_val,_ = f_loss_batch(params, batch_val)
+        loss_val, _ = f_loss_batch(params, batch_val)
 
         f = open(files["f_out"], "a+")
         time_epoch = time.time() - start_time_epoch
@@ -115,7 +118,7 @@ def _optimization(
 
         if loss_val < loss_val0:
             loss_val0 = loss_val
-            f_params = params #f_params_preprocessing(params)
+            f_params = params  # f_params_preprocessing(params)
             jnp.save(files["f_w"], f_params)
             jnp.save(get_params_file_itr(files, epoch), f_params)
 

@@ -5,6 +5,7 @@ from typing import Any
 import chex
 from huxel.parameters import Bohr_to_AA
 
+
 class myMolecule:
     """
     Basic class for individual molecule
@@ -18,7 +19,7 @@ class myMolecule:
         conectivity_matrix: Any = jnp.ones(1),
         homo_lumo_grap_ref: float = 1.0,
         polarizability_ref: float = 1.0,
-        xyz: Any = jnp.ones((2,3)),
+        xyz: Any = jnp.ones((2, 3)),
         dm: Any = None
     ):
         self.id = id
@@ -36,12 +37,11 @@ class myMolecule:
 
     def get_dm_AA_to_Bohr(self):
         z = self.xyz[:, None] - self.xyz[None, :]
-        dm = jnp.linalg.norm(z, axis=2)  # compute the bond length      
-        self.dm = jnp.divide(dm, Bohr_to_AA) # AA --> Bohr
+        dm = jnp.linalg.norm(z, axis=2)  # compute the bond length
+        self.dm = jnp.divide(dm, Bohr_to_AA)  # AA --> Bohr
 
-    def get_xyz_AA_to_Bohr(self):    
-        self.xyz_Bohr = jnp.divide(self.xyz, Bohr_to_AA) # AA --> Bohr
-        
+    def get_xyz_AA_to_Bohr(self):
+        self.xyz_Bohr = jnp.divide(self.xyz, Bohr_to_AA)  # AA --> Bohr
 
 
 # if __name__ == "__main__":

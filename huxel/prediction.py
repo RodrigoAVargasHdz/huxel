@@ -17,7 +17,8 @@ from jax.config import config
 jax.config.update("jax_enable_x64", True)
 jax.config.update('jax_disable_jit', True)
 
-def _pred(obs:str="homo_lumo", n_tr:int=50, l:int=0, beta:str="exp", bool_randW:bool=False):
+
+def _pred(obs: str = "homo_lumo", n_tr: int = 50, l: int = 0, beta: str = "exp", bool_randW: bool = False):
 
     if obs.lower() == 'hl' or obs.lower() == 'homo_lumo':
         external_field = None
@@ -58,29 +59,29 @@ def _pred(obs:str="homo_lumo", n_tr:int=50, l:int=0, beta:str="exp", bool_randW:
     # jnp.save('./Results/Prediction_coulson.npy',R)
 
 
-def _pred_def(obs:str="homo_lumo", beta:str="exp", pred_data:str="val"):
-    
+def _pred_def(obs: str = "homo_lumo", beta: str = "exp", pred_data: str = "val"):
+
     if obs.lower() == 'hl' or obs.lower() == 'homo_lumo':
         external_field = None
     elif obs.lower() == 'pol' or obs.lower() == 'polarizability':
         external_field = 0.
-  
+
     # get data
     D_tr, D_val = get_raw_data()
 
-    if pred_data == "val" or pred_data == "validation": 
+    if pred_data == "val" or pred_data == "validation":
         D = D_val
         data_ = 'val'
     if pred_data == "tr" or pred_data == "training":
         D = D_tr
         data_ = 'training'
-    
+
     D = batch_to_list_class(D)
 
     # files
     r_dir = "Results_default/"
 
-    f_job = "huckel_{}_default_{}".format(obs,data_)
+    f_job = "huckel_{}_default_{}".format(obs, data_)
     f_out = "{}/out_{}.txt".format(r_dir, f_job)
     f_w = "{}/parameters_{}.npy".format(r_dir, f_job)
     f_pred = "{}/Prediction_{}.npy".format(r_dir, f_job)
@@ -101,7 +102,7 @@ def _pred_def(obs:str="homo_lumo", beta:str="exp", pred_data:str="val"):
     params0 = get_default_params()
 
     # prediction
-    external_field = 0. 
+    external_field = 0.
     external_field = get_external_field(obs, external_field)
 
     f_pred = _f_observable(obs, beta, external_field)
