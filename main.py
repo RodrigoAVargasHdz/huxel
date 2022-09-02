@@ -10,7 +10,8 @@ def main():
     parser.add_argument("--l", type=int, default=0, help="label")
     parser.add_argument("--lr", type=float, default=2e-2, help="learning rate")
     parser.add_argument("--batch_size", type=int, default=16, help="batches")
-    parser.add_argument("--job", type=str, default="pred_def", help="job type")
+    parser.add_argument("--job", type=str, default="pred_def",
+                        help="job type", choices=['opt', 'pred', 'pred_def'])
     parser.add_argument('--obs', type=str, default='homo_lumo',
                         help="molecular observable")
     parser.add_argument("--beta", type=str, default="c",
@@ -43,8 +44,6 @@ def main():
     bool_randW = args.randW
     list_Wdecay = args.alist
     pred_data = args.pred_data
-
-    # assert 0
 
     if job_ == "opt":
         opt(obs_, n_tr, batch_size, lr, l, beta_, list_Wdecay, bool_randW)

@@ -1,6 +1,7 @@
-# HUXEL
+# HÜXEL =  JAX + HÜCKEL
 
-Fully differentiable Huckel model in JAX.
+Optimization of the Hückel model *à la* machine learning. 
+Using JAX, we created a fully differentiable Huckel model where all parameters could be optimized with respect to some reference data.
 
 # Beta functions
 constant ('--beta c')
