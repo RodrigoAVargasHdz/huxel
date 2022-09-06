@@ -13,15 +13,13 @@ from huxel.utils import load_pre_opt_params
 PRNGKey = Any
 
 
-def get_raw_data(r_data: str = 'huxel/data/'):  # '/u/rvargas/huxel_data_kjorner'
+def get_raw_data(r_data: str = 'huxel/data/'):
     return (
         onp.load(
-            # ,"gdb13_list_100000_hl-pol-xyz_training.npy"
             os.path.join(r_data, 'data_gdb13_training.npy'),
             allow_pickle=True,
         ),
         onp.load(
-            # "gdb13_list_100000_hl-pol-xyz_test.npy"
             os.path.join(r_data, 'data_gdb13_test.npy'),
             allow_pickle=True
         ),
