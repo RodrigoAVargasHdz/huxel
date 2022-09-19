@@ -69,7 +69,7 @@ def get_batches(Dtr: Any, batch_size: int, key: PRNGKey) -> Tuple:
     return batches, n_batches
 
 
-def split_trainig_test(n_tr: int, key: PRNGKey, D: Any = None) -> Tuple:
+def split_training_test(n_tr: int, key: PRNGKey, D: Any = None) -> Tuple:
     """Split training and validation data
 
     Args:
@@ -122,7 +122,7 @@ def get_tr_val_data(files: dict, n_tr: int, subkey: PRNGKey, batch_size: int) ->
         n_batches = _D.item()["n_batches"]
         batches, n_batches = get_batches(D_tr, batch_size, subkey)
     else:
-        D_tr, D_val = split_trainig_test(n_tr, subkey)
+        D_tr, D_val = split_training_test(n_tr, subkey)
         _, subkey = jax.random.split(subkey)  # new key
         batches, n_batches = get_batches(D_tr, batch_size, subkey)
         _, subkey = jax.random.split(subkey)  # new key

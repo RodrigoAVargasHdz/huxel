@@ -173,19 +173,19 @@ def _construct_huckel_matrix(params: dict, molecule, f_beta: Callable, bool_AA_t
         params (dict): Hückel model's parameters
         batch (Any): list of molecules (batch)
         f_beta (callable): atom-atom interaction_
-        bool_AA_to_Bhor (bool, optional): Armstrong (AA) or Bhor units
+        bool_AA_to_Bohr (bool, optional): Armstrong (AA) or Bohr units
 
     Returns:
         Tuple: Hückel matrix, number of electrons
     """
     atom_types = molecule.atom_types
-    conectivity_matrix = molecule.connectivity_matrix
+    connectivity_matrix = molecule.connectivity_matrix
     # CHECK THIS FOR POLARIZABILITY UNITS PROBLEM OR f_BETA(R) FUNCTIONS!!
     dm = molecule.dm
 
-    huckel_matrix = jnp.zeros_like(conectivity_matrix, dtype=jnp.float32)
+    huckel_matrix = jnp.zeros_like(connectivity_matrix, dtype=jnp.float32)
     # off diagonal terms
-    for i, j in zip(*jnp.nonzero(conectivity_matrix)):
+    for i, j in zip(*jnp.nonzero(connectivity_matrix)):
         atom_type_i = atom_types[i]
         atom_type_j = atom_types[j]
         key = frozenset([atom_type_i, atom_type_j])
@@ -239,7 +239,7 @@ def _electrons(atom_types: list) -> Any:
 
 
 def _solve(huckel_matrix: Any) -> Tuple:
-    """Diagonalization of the Hückel matrix
+    """Return the eigenvalues and eigenvectors of the Hückel matrix
 
     Args:
         huckel_matrix (Any):  Hückel matrix
