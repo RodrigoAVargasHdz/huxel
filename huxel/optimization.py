@@ -1,12 +1,9 @@
 import time
 from typing import Any
-import numpy as onp
-
 import jax
 import jax.numpy as jnp
-from jax import random, lax, value_and_grad
+from jax import value_and_grad
 
-from flax import optim
 import optax
 
 from huxel.data_utils import get_tr_val_data
@@ -19,8 +16,6 @@ from huxel.outfiles_utils import get_files_names,  print_head, print_tail, get_p
 from huxel.data_utils import save_tr_and_val_loss, batch_to_list_class
 from huxel.observables import _f_observable, _loss_function, _preprocessing_params
 
-
-from jax.config import config
 jax.config.update("jax_enable_x64", True)
 jax.config.update('jax_disable_jit', True)
 
@@ -37,7 +32,21 @@ def _optimization(
     list_Wdecay: list = None,
     bool_randW: bool = False,
     external_field: Any = None,
-):
+) -> None:
+    """Optimization routine
+
+    Args:
+        obs (str, optional): target observable. Defaults to 'homo_lumo'.
+        n_tr (int, optional): number of training data. Defaults to 1.
+        batch_size (int, optional): batch size. Defaults to 100.
+        lr (float, optional): learning rate. Defaults to 2e-3.
+        l (int, optional): label. Defaults to 0.
+        beta (str, optional): atom-atom interaction. Defaults to "exp".
+        list_Wdecay (list, optional): list of parameters for weight decay. Defaults to None.
+        bool_randW (bool, optional): boolean for random initial parameters. Defaults to False. (False -> literature parameters; True -> random parameters)
+        external_field (Any, optional): external field value. Defaults to None.
+
+    """
 
     # optimization parameters
     w_decay = 1e-4

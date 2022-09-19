@@ -1,6 +1,5 @@
 import os
-import datetime
-from typing import Any
+from typing import Any, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -21,7 +20,15 @@ PRNGKey = Any
 
 # --------------------------------
 #     PARAMETERS
-def load_pre_opt_params(files: dict):
+def load_pre_opt_params(files: dict) -> Tuple:
+    """Load parameters from a file
+
+    Args:
+        files (dict): file's name 
+
+    Returns:
+        Tuple: number of epochs, loss function value, validation loss function 
+    """
     if os.path.isfile(files["f_loss_opt"]):
         D = onp.load(files["f_loss_opt"], allow_pickle=True)
         epochs = D.item()["epoch"]
@@ -30,7 +37,18 @@ def load_pre_opt_params(files: dict):
         return epochs, loss_tr, loss_val
 
 
-def random_pytrees(_pytree: dict, key: PRNGKey, minval: float = -1.0, maxval: float = 1.0):
+def random_pytrees(_pytree: dict, key: PRNGKey, minval: float = -1.0, maxval: float = 1.0) -> Tuple:
+    """Generate a pytree with random values [minval,maxval]
+
+    Args:
+        _pytree (dict): base pytree
+        key (PRNGKey): a PRNG key used as the random key.
+        minval (float, optional): minimum allowed value. Defaults to -1.0.
+        maxval (float, optional): maximum allowed value. Defaults to 1.0.
+
+    Returns:
+        Tuple: random pytree, new PRNG key
+    """
     _pytree_flat, _pytree_tree = jax.tree_util.tree_flatten(_pytree)
     _pytree_random_flat = jax.random.uniform(
         key, shape=(len(_pytree_flat),), minval=minval, maxval=maxval
@@ -41,15 +59,23 @@ def random_pytrees(_pytree: dict, key: PRNGKey, minval: float = -1.0, maxval: fl
     return _new_pytree, subkey
 
 
-def get_init_params_homo_lumo():
-    # params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
-    # params_lr.item()["alpha"] * jnp.ones(1)
+def get_init_params_homo_lumo() -> Tuple:
+    """Initial parameters for linear transformation for HOMO-LUMO gap. Obtained from a linear fit.
+
+    Returns:
+        Tuple: parameters
+    """
     alpha = jnp.array([-2.252276274030775])
     beta = jnp.array([2.053257355175381])  # params_lr.item()["beta"]
     return jnp.array(alpha), jnp.array(beta)
 
 
-def get_init_params_polarizability():
+def get_init_params_polarizability() -> Tuple:
+    """Initial parameters for linear transformation for polarizability. Obtained from a linear fit.
+
+    Returns:
+        Tuple: parameters
+    """
     # params_lr = onp.load("huxel/data/lr_params.npy", allow_pickle=True)
     alpha = jnp.ones(1)
     # jnp.array([116.85390527250595]) #params_lr.item()["beta"]
@@ -57,7 +83,15 @@ def get_init_params_polarizability():
     return jnp.array(alpha), jnp.array(beta)
 
 
-def get_y_xy_random(key: PRNGKey):
+def get_y_xy_random(key: PRNGKey) -> Tuple:
+    """Random parameters for atom-atom parameters
+
+    Args:
+        key (PRNGKey): a PRNG key used as the random key.
+
+    Returns:
+        Tuple: random pytree
+    """
     y_xy_flat, y_xy_tree = jax.tree_util.tree_flatten(Y_XY_AA)
     y_xy_random_flat = jax.random.uniform(
         key, shape=(len(y_xy_flat),), minval=-0.1, maxval=0.1
@@ -68,7 +102,22 @@ def get_y_xy_random(key: PRNGKey):
     return y_xy_random, subkey
 
 
-def get_params_pytrees(hl_a: float, hl_b: float, pol_a: float, pol_b: float, h_x: dict, h_xy: dict, r_xy: dict, y_xy: dict):
+def get_params_pytrees(hl_a: float, hl_b: float, pol_a: float, pol_b: float, h_x: dict, h_xy: dict, r_xy: dict, y_xy: dict) -> Any:
+    """Full set of parameters
+
+    Args:
+        hl_a (float): HOMO-LUMO linear parameter
+        hl_b (float): HOMO-LUMO linear parameter
+        pol_a (float): Polarizability linear parameter
+        pol_b (float): Polarizability linear parameter
+        h_x (dict): Hückel model diagonal parameter (energy of an electron in a 2p orbital)
+        h_xy (dict): Hückel model of diagonal parameter (energy of an electron in the bond i-j)
+        r_xy (dict): distance-dependence parameter
+        y_xy (dict): length-scale parameter 
+
+    Returns:
+        Any: parameters
+    """
     params_init = {
         "hl_params": {"a": hl_a, "b": hl_b},
         "pol_params": {"a": pol_a, "b": pol_b},
@@ -81,7 +130,15 @@ def get_params_pytrees(hl_a: float, hl_b: float, pol_a: float, pol_b: float, h_x
 
 
 # include alpha y beta in the new parameters
-def get_default_params(observable: str = "homo_lumo"):
+def get_default_params(observable: str = "homo_lumo") -> Any:
+    """Load literature parameters 
+
+    Args:
+        observable (str, optional): target observable. Defaults to "homo_lumo".
+
+    Returns:
+        Any: parameters pytree
+    """
     params_hl = get_init_params_homo_lumo()  # homo_lumo
     params_pol = get_init_params_polarizability()  # (jnp.ones(1), jnp.ones(1))
 
@@ -95,8 +152,15 @@ def get_default_params(observable: str = "homo_lumo"):
     return get_params_pytrees(params_hl[0], params_hl[1], params_pol[0], params_pol[1], H_X, H_XY, R_XY, Y_XY)
 
 
-def get_params_bool(params_wdecay_: dict):
-    """return params_bool where weight decay will be used. array used in masks in OPTAX"""
+def get_params_bool(params_wdecay_: dict) -> dict:
+    """pytree of booleans where weight decay will be used. array used in masks in OPTAX
+
+    Args:
+        params_wdecay_ (dict): parameters pytree 
+
+    Returns:
+        dict: parameters pytree 
+    """
     params = get_default_params()
 
     params_bool = params
@@ -122,7 +186,16 @@ def get_params_bool(params_wdecay_: dict):
             return params_bool
 
 
-def get_random_params(files: dict, key: PRNGKey):
+def get_random_params(files: dict, key: PRNGKey) -> Tuple:
+    """Random parameters if file does not exists
+
+    Args:
+        files (dict): file name where parameters are saved
+        key (PRNGKey): a PRNG key used as the random key.
+
+    Returns:
+        Tuple: parameters pytree, new PRNG key
+    """
     if not os.path.isfile(files["f_w"]):
         params_init = get_default_params()
         # params_lr,params_coulson = params_init
@@ -167,7 +240,16 @@ def get_random_params(files: dict, key: PRNGKey):
         return params, key
 
 
-def get_init_params(files: dict, obs: str = "homo_lumo"):
+def get_init_params(files: dict, obs: str = "homo_lumo") -> Any:
+    """Initial parameters for target observable
+
+    Args:
+        files (dict): dictionary with file's name
+        obs (str, optional): target observable. Defaults to "homo_lumo".
+
+    Returns:
+        Any: _description_
+    """
     params_init = get_default_params()
     if os.path.isfile(files["f_w"]):
         params = onp.load(files["f_w"], allow_pickle=True)
@@ -200,7 +282,16 @@ def get_init_params(files: dict, obs: str = "homo_lumo"):
         return params_init
 
 
-def get_external_field(observable: str = 'homo_lumo', magnitude: Any = 0.):
+def get_external_field(observable: str = 'homo_lumo', magnitude: Any = 0.) -> Any:
+    """External field value
+
+    Args:
+        observable (str, optional): target observable. Defaults to 'homo_lumo'.
+        magnitude (Any, optional): external field magnitude. Defaults to 0..
+
+    Returns:
+        Any: external field
+    """
     if observable.lower() == 'polarizability' or observable.lower() == 'pol':
         if isinstance(magnitude, float):
             return magnitude*jnp.ones(3)
@@ -213,7 +304,15 @@ def get_external_field(observable: str = 'homo_lumo', magnitude: Any = 0.):
 
 
 @jit
-def update_h_x(h_x: dict):
+def update_h_x(h_x: dict) -> dict:
+    """Normalization of the Hückel model diagonal parameters with respect to C atom
+
+    Args:
+        h_x (dict): pytree
+
+    Returns:
+        dict: parameters normalized with respect to C atom parameter
+    """
     xc = h_x["C"]
     xc_tree = jax.tree_unflatten(
         h_x_tree, xc * jnp.ones_like(jnp.array(h_x_flat)))
@@ -221,7 +320,15 @@ def update_h_x(h_x: dict):
 
 
 @jit
-def update_h_xy(h_xy: dict):
+def update_h_xy(h_xy: dict) -> dict:
+    """Normalization of the Hückel model of diagonal parameters with respect to C-C atoms parameter
+
+    Args:
+        h_xy (dict): pytree
+
+    Returns:
+        dict: parameters normalized with respect to C-C atoms parameter
+    """
     key = frozenset(["C", "C"])
     xcc = h_xy[key]
     xcc_tree = jax.tree_unflatten(
@@ -230,28 +337,62 @@ def update_h_xy(h_xy: dict):
 
 
 @jit
-def update_h_x_au_to_eV(h_x: dict, pol_a: Any):
+def update_h_x_au_to_eV(h_x: dict, pol_a: Any) -> dict:
+    """Unit conversion to a.u. to eV
+
+    Args:
+        h_x (dict): parameters
+        pol_a (Any): conversion value
+
+    Returns:
+        dict: parameters
+    """
     x_tree = jax.tree_unflatten(
         h_x_tree, (pol_a/au_to_eV) * jnp.ones_like(jnp.array(h_x_flat)))
     return jax.tree_map(f_mult_pytrees, x_tree, h_x)
 
 
 @jit
-def update_h_xy_au_to_eV(h_xy: dict, pol_a: Any):
+def update_h_xy_au_to_eV(h_xy: dict, pol_a: Any) -> dict:
+    """Unit conversion to a.u. to eV
+
+    Args:
+        h_x (dict): parameters
+        pol_a (Any): conversion value
+
+    Returns:
+        dict: parameters
+    """
     xy_tree = jax.tree_unflatten(
         h_xy_tree, (pol_a/au_to_eV) * jnp.ones_like(jnp.array(h_xy_flat)))
     return jax.tree_map(f_mult_pytrees, xy_tree, h_xy)
 
 
 @jit
-def update_r_xy_Bohr_to_AA(r_xy: dict):
+def update_r_xy_Bohr_to_AA(r_xy: dict) -> dict:
+    """Unit conversion to Bohr to Armstrong for distance dependence parameters
+
+    Args:
+        r_xy (dict): parameters
+
+    Returns:
+        dict: parameters
+    """
     xy_tree = jax.tree_unflatten(
         r_xy_tree, (Bohr_to_AA) * jnp.ones_like(jnp.array(r_xy_flat)))
     return jax.tree_map(f_div_pytrees, xy_tree, r_xy)
 
 
 @jit
-def normalize_params_wrt_C(params: dict):
+def normalize_params_wrt_C(params: dict) -> dict:
+    """Normalization of the Hückel model with respect to C atom parameter
+
+    Args:
+        params (dict): parameters
+
+    Returns:
+        dict: normalized parameters
+    """
     h_x = update_h_x(params["h_x"])
     h_xy = update_h_xy(params["h_xy"])
 
@@ -269,7 +410,15 @@ def normalize_params_wrt_C(params: dict):
 
 
 @jit
-def normalize_params_polarizability(params: dict):
+def normalize_params_polarizability(params: dict) -> dict:
+    """Normalization of the Hückel model with respect to C atom parameter, for polarizability
+
+    Args:
+        params (dict): parameters
+
+    Returns:
+        dict: normalized parameters
+    """
     # params_norm_c = normalize_params_wrt_C(params)
     params_norm_c = params
     pol_a = params_norm_c["pol_params"]["a"]

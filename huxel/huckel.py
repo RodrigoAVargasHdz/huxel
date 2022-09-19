@@ -1,29 +1,49 @@
-from typing import Any, Callable
+from typing import Any, Callable, Tuple
 
 import jax
 import jax.numpy as jnp
 from jax import random
-from jax import jit, vmap, lax, value_and_grad, jacfwd
+from jax import vmap, lax
 from jax.tree_util import tree_flatten, tree_unflatten, tree_multimap
 
 from huxel.parameters import H_X, N_ELECTRONS, H_X, H_XY
 from huxel.molecule import myMolecule
 from huxel.utils import normalize_params_wrt_C, normalize_params_polarizability
 
-from jax.config import config
+
 jax.config.update("jax_enable_x64", True)
 jax.config.update('jax_disable_jit', True)
 
 # -------
 
 
-def homo_lumo_pred(params: dict, batch: Any, f_beta: Callable):
+def homo_lumo_pred(params: dict, batch: Any, f_beta: Callable) -> Tuple:
+    """Linear transformation of the predicted HOMO-LUMO gap for a batch of molecules 
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (Callable): atom-atom interaction
+
+    Returns:
+        Tuple: Linearly transformed predicted HOMO-LUMO gap
+    """
     z_pred, y_true = f_homo_lumo_batch(params, batch, f_beta)
     y_pred = params["hl_params"]["a"]*z_pred + params["hl_params"]["b"]
     return y_pred, z_pred, y_true
 
 
-def f_homo_lumo_batch(params: dict, batch: Any, f_beta: Callable):
+def f_homo_lumo_batch(params: dict, batch: Any, f_beta: Callable) -> Tuple:
+    """Computes the HOMO-LUMO gap for a batch of molecules 
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (Callable): atom-atom interaction
+
+    Returns:
+        Tuple: Predicted HOMO-LUMO gap
+    """
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
@@ -33,8 +53,18 @@ def f_homo_lumo_batch(params: dict, batch: Any, f_beta: Callable):
     return y_pred[1:], y_true[1:]
 
 
-def f_homo_lumo(params: dict, molecule, f_beta):
-    # atom_types,conectivity_matrix = molecule
+def f_homo_lumo(params: dict, molecule, f_beta) -> Tuple:
+    """HOMO-LUMO gap per single molecule
+
+    Args:
+        params (dict): Hückel model's parameters
+        molecule (_type_): single molecule
+        f_beta (_type_): atom-atom interaction
+
+    Returns:
+        Tuple: predicted HOMO-LUMO gap, Hückel matrix and eigenvalues
+    """
+    # atom_types,connectivity_matrix = molecule
     h_m, electrons = _construct_huckel_matrix(params, molecule, f_beta)
     e_, _ = _solve(h_m)
 
@@ -51,14 +81,36 @@ def f_homo_lumo(params: dict, molecule, f_beta):
 # -------
 
 
-def polarizability_pred(params: dict, batch: Any, f_beta: Callable, external_field: Any = None):
+def polarizability_pred(params: dict, batch: Any, f_beta: Callable, external_field: Any = None) -> Tuple:
+    """Molecular polarizability
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (Callable): atom-atom interaction_
+        external_field (Any, optional): External field. Defaults to None.
+
+    Returns:
+        Tuple: Predicted polarizability, Reference polarizability
+    """
     z_pred, y_true = f_polarizability_batch(
         params, batch, f_beta, external_field)
     y_pred = z_pred  # + params["pol_params"]["b"]
     return y_pred, z_pred, y_true
 
 
-def f_polarizability_batch(params: dict, batch: Any, f_beta: callable, external_field: Any = None):
+def f_polarizability_batch(params: dict, batch: Any, f_beta: callable, external_field: Any = None) -> Tuple:
+    """Molecular polarizability for a batch of molecules
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (callable): atom-atom interaction_
+        external_field (Any, optional): External field. Defaults to None.
+
+    Returns:
+        Tuple: Predicted polarizability, Reference polarizability
+    """
     y_pred = jnp.ones(1)
     y_true = jnp.ones(1)
     for m in batch:
@@ -68,14 +120,36 @@ def f_polarizability_batch(params: dict, batch: Any, f_beta: callable, external_
     return y_pred[1:], y_true[1:]
 
 
-def f_polarizability(params: dict, molecule: Any, f_beta: callable, external_field: Any = None):
+def f_polarizability(params: dict, molecule: Any, f_beta: callable, external_field: Any = None) -> Any:
+    """Molecular polarizability
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (callable): atom-atom interaction_
+        external_field (Any, optional): External field. Defaults to None.
+
+    Returns:
+        Any: Predicted polarizability
+    """
     polarizability_tensor = jax.hessian(f_energy, argnums=(3))(
         params, molecule, f_beta, external_field)
     polarizability = (1/3.)*jnp.trace(polarizability_tensor)
     return polarizability
 
 
-def f_energy(params: dict, molecule: Any, f_beta: Callable, external_field: Any = None):
+def f_energy(params: dict, molecule: Any, f_beta: Callable, external_field: Any = None) -> Any:
+    """Hückel model's energy
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (callable): atom-atom interaction_
+        external_field (Any, optional): External field. Defaults to None.
+
+    Returns:
+        Any: Energy
+    """
     h_m, electrons = _construct_huckel_matrix(params, molecule, f_beta)
 
     if external_field != None:
@@ -92,9 +166,20 @@ def f_energy(params: dict, molecule: Any, f_beta: Callable, external_field: Any 
 # --------------------------------------------------------
 
 
-def _construct_huckel_matrix(params: dict, molecule, f_beta: Callable, bool_AA_to_Bhor: bool = True):
+def _construct_huckel_matrix(params: dict, molecule, f_beta: Callable, bool_AA_to_Bhor: bool = True) -> Tuple:
+    """Hückel matrix (batch)
+
+    Args:
+        params (dict): Hückel model's parameters
+        batch (Any): list of molecules (batch)
+        f_beta (callable): atom-atom interaction_
+        bool_AA_to_Bhor (bool, optional): Armstrong (AA) or Bhor units
+
+    Returns:
+        Tuple: Hückel matrix, number of electrons
+    """
     atom_types = molecule.atom_types
-    conectivity_matrix = molecule.conectivity_matrix
+    conectivity_matrix = molecule.connectivity_matrix
     # CHECK THIS FOR POLARIZABILITY UNITS PROBLEM OR f_BETA(R) FUNCTIONS!!
     dm = molecule.dm
 
@@ -119,7 +204,16 @@ def _construct_huckel_matrix(params: dict, molecule, f_beta: Callable, bool_AA_t
     return huckel_matrix, electrons
 
 
-def _construct_huckel_matrix_field(molecule: Any, field: Any):
+def _construct_huckel_matrix_field(molecule: Any, field: Any) -> Any:
+    """Diagonal elements of Hückel matrix in the presence of an external field
+
+    Args:
+        molecule (Any):
+        field (Any): 
+
+    Returns:
+        Any: Diagonal of the Hückel matrix in the presence of an external field
+    """
     # atom_types = molecule.atom_types
     # xyz = molecule.xyz
     xyz = molecule.xyz_Bohr
@@ -132,24 +226,58 @@ def _construct_huckel_matrix_field(molecule: Any, field: Any):
     return diag_ri
 
 
-def _electrons(atom_types: list):
+def _electrons(atom_types: list) -> Any:
+    """number of electrons in each Hückel orbital
+
+    Args:
+        atom_types (list): type of atoms 
+
+    Returns:
+        Any: number of electron in each atom
+    """
     return jnp.stack([N_ELECTRONS[atom_type] for atom_type in atom_types])
 
 
-def _solve(huckel_matrix: Any):
+def _solve(huckel_matrix: Any) -> Tuple:
+    """Diagonalization of the Hückel matrix
+
+    Args:
+        huckel_matrix (Any):  Hückel matrix
+
+    Returns:
+        Tuple: Eigenvalues and Eigenvectors
+    """
     eig_vals, eig_vects = jnp.linalg.eigh(huckel_matrix)
     return eig_vals[::-1], eig_vects.T[::-1, :]
 
 
-def _get_multiplicty(n_electrons: int):
+def _get_multiplicity(n_electrons: int) -> Any:
+    """Multiplicity
+
+    Args:
+        n_electrons (int): number of electrons
+
+    Returns:
+        Any: multiplicity
+    """
     return (n_electrons % 2) + 1
 
 
-def _set_occupations(electrons: int, energies: Any, n_orbitals: int):
+def _set_occupations(electrons: int, energies: Any, n_orbitals: int) -> Tuple:
+    """Occupation
+
+    Args:
+        electrons (int): number of electrons
+        energies (Any): Hückel's eigenvalues
+        n_orbitals (int): number of orbitals
+
+    Returns:
+        Tuple: occupation, spin occupation, number of occupied orbitals, number of unpair electrons
+    """
     charge = 0
     n_dec_degen = 3
     n_electrons = jnp.sum(electrons) - charge
-    multiplicity = _get_multiplicty(n_electrons)
+    multiplicity = _get_multiplicity(n_electrons)
     n_excess_spin = multiplicity - 1
 
     # Determine number of singly and doubly occupied orbitals.
@@ -196,39 +324,3 @@ def _set_occupations(electrons: int, energies: Any, n_orbitals: int):
         jnp.sum(occupations[:n_occupied][occupations[:n_occupied] != 2])
     )
     return occupations, spin_occupations, n_occupied, n_unpaired
-
-# ------------------------
-# TEST
-
-
-def update_params(p, g, alpha=0.1):
-    def inner_sgd_fn(g, params): return (params - alpha*g)
-    return tree_multimap(inner_sgd_fn, g, p)
-
-
-def main_test():
-    h_x = H_X
-    h_xy = H_XY
-    params = (h_x, h_xy)
-
-    atom_types = ['C', 'C', 'C', 'C']
-
-    conectivity_matrix = jnp.array([[0, 1, 0, 0],
-                                    [1, 0, 1, 0],
-                                    [0, 1, 0, 1],
-                                    [0, 0, 1, 0]], dtype=int)
-
-    molec = myMolecule('test', atom_types, conectivity_matrix, 1.)
-
-    # test single molecule
-    v, g = value_and_grad(f_homo_lumo, has_aux=True,)(params, molec)
-    print('HOMO-LUMO')
-    homo_lumo_val, _ = v
-    print(homo_lumo_val)
-    print('GRAD HOMO-LUMO')
-    print(g)
-
-
-if __name__ == "__main__":
-
-    main_test()

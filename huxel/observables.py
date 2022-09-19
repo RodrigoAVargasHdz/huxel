@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 import jax
 import jax.numpy as jnp
 from typing import Any, Callable
@@ -9,7 +9,15 @@ from huxel.beta_functions import _f_beta
 from huxel.data_utils import data_normalization
 
 
-def _preprocessing_params(observable: str):
+def _preprocessing_params(observable: str = 'homo_lumo') -> Callable:
+    """Wrapper function to normalize the parameters with respect to C atom
+
+    Args:
+        observable (str): target observable. Default: homo_lumo
+
+    Returns:
+        Callable: pre-processing function
+    """
     if observable.lower() == 'homo_lumo' or observable.lower() == 'hl':
         def wrapper(*args):
             return normalize_params_wrt_C(*args)
@@ -20,7 +28,17 @@ def _preprocessing_params(observable: str):
         return wrapper
 
 
-def _f_observable(observable: str, beta: str, external_field: Any = None):
+def _f_observable(observable: str, beta: str, external_field: Any = None) -> Callable:
+    """Wrapper function for the observable computation.
+
+    Args:
+        observable (str): target observable.
+        beta (str): atom-atom interaction
+        external_field (Any, optional): external field value. Defaults to None.
+
+    Returns:
+        Callable: observable function
+    """
     f_beta = _f_beta(beta)
     ext_field = get_external_field(observable, external_field)
 
@@ -39,7 +57,17 @@ def _f_observable(observable: str, beta: str, external_field: Any = None):
         return wrapper
 
 
-def loss_rmse(params_tot: Dict, batch: Any, f_obs: Callable):
+def loss_rmse(params_tot: Dict, batch: Any, f_obs: Callable) -> Tuple:
+    """Root-mean square error 
+
+    Args:
+        params_tot (Dict): parameters
+        batch (Any): batch (molecules)
+        f_obs (Callable): function to compute observable
+
+    Returns:
+        Tuple: rmse, (predicted values, true values)
+    """
 
     # params_tot = update_params_all(params_tot) # Carbon normalization
     y_pred, z_pred, y_true = f_obs(params_tot, batch)

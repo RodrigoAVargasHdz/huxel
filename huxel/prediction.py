@@ -12,13 +12,20 @@ from huxel.utils import (
 )
 from huxel.outfiles_utils import get_files_names
 
-from jax.config import config
-
 jax.config.update("jax_enable_x64", True)
 jax.config.update('jax_disable_jit', True)
 
 
-def _pred(obs: str = "homo_lumo", n_tr: int = 50, l: int = 0, beta: str = "exp", bool_randW: bool = False):
+def _pred(obs: str = "homo_lumo", n_tr: int = 50, l: int = 0, beta: str = "exp", bool_randW: bool = False) -> None:
+    """Prediction using the Hückel model.
+    Results are saved in a file: Prediction_huckel_{obs}_N_{ntr}_l_{l}_AdamW.npy"
+    Args:
+        obs (str, optional): target observable. Defaults to "homo_lumo".
+        n_tr (int, optional): number of training data. Defaults to 50.
+        l (int, optional): label. Defaults to 0.
+        beta (str, optional): atom-atom function. Defaults to "exp".
+        bool_randW (bool, optional): boolean for random parameters. Defaults to False.
+    """
 
     if obs.lower() == 'hl' or obs.lower() == 'homo_lumo':
         external_field = None
@@ -29,9 +36,6 @@ def _pred(obs: str = "homo_lumo", n_tr: int = 50, l: int = 0, beta: str = "exp",
 
     # files
     files = get_files_names(obs, n_tr, l, beta, bool_randW, opt_name)
-
-    # if os.path.isfile(files['f_pred']):
-    #     assert 0
 
     # initialize parameters
     params = get_init_params(files)
@@ -50,16 +54,21 @@ def _pred(obs: str = "homo_lumo", n_tr: int = 50, l: int = 0, beta: str = "exp",
         "y_pred": y_pred,
         "z_pred": z_pred,
         "y_true": y_true,
-        # 'y0_pred': y0_pred,
-        # 'z0_pred': z0_pred,
-        # 'y0_true': y0_true,
     }
 
     jnp.save(files["f_pred"], R)
-    # jnp.save('./Results/Prediction_coulson.npy',R)
 
 
-def _pred_def(obs: str = "homo_lumo", beta: str = "exp", pred_data: str = "val"):
+def _pred_def(obs: str = "homo_lumo", beta: str = "exp", pred_data: str = "val") -> None:
+    """Prediction using the Hückel model (literature parameters).
+    Results are saved in a file: Prediction_huckel_{obs}_default_{}.npy"
+    Args:
+        obs (str, optional): target observable. Defaults to "homo_lumo".
+        n_tr (int, optional): number of training data. Defaults to 50.
+        l (int, optional): label. Defaults to 0.
+        beta (str, optional): atom-atom function. Defaults to "exp".
+        bool_randW (bool, optional): boolean for random parameters. Defaults to False.
+    """
 
     if obs.lower() == 'hl' or obs.lower() == 'homo_lumo':
         external_field = None
@@ -114,9 +123,6 @@ def _pred_def(obs: str = "homo_lumo", beta: str = "exp", pred_data: str = "val")
         "y_pred": y_pred,
         "z_pred": z_pred,
         "y_true": y_true,
-        # 'y0_pred': y0_pred,
-        # 'z0_pred': z0_pred,
-        # 'y0_true': y0_true,
     }
 
     jnp.save(files["f_pred"], R)
