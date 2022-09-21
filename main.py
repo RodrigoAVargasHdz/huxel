@@ -1,4 +1,3 @@
-import time
 import argparse
 
 from huxel import opt, pred, pred_def
@@ -6,18 +5,18 @@ from huxel import opt, pred, pred_def
 
 def main():
     parser = argparse.ArgumentParser(description="Huxel = JAX + Huckel model")
-    parser.add_argument("--N", type=int, default=101, help="traning data")
+    parser.add_argument("--N", type=int, default=101, help="training data")
     parser.add_argument("--l", type=int, default=0, help="label")
     parser.add_argument("--lr", type=float, default=2e-2, help="learning rate")
     parser.add_argument("--batch_size", type=int, default=16, help="batches")
     parser.add_argument("--job", type=str, default="pred_def",
                         help="job type", choices=['opt', 'pred', 'pred_def'])
     parser.add_argument('--obs', type=str, default='homo_lumo',
-                        help="molecular observable")
+                        help="molecular observable [homo_lumo,pol]")
     parser.add_argument("--beta", type=str, default="c",
                         help="beta function type")
     parser.add_argument("--pred_data", type=str, default="val",
-                        help="predict val or training data: True --> validation")
+                        help="predict val or training data: True -> validation")
     parser.add_argument(
         "--randW", type=bool, default=False, help="random initial params"
     )

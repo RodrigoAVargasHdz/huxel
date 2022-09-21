@@ -6,7 +6,6 @@ from typing import Any, Callable
 from huxel.huckel import homo_lumo_pred, polarizability_pred
 from huxel.utils import normalize_params_polarizability, normalize_params_wrt_C, get_external_field
 from huxel.beta_functions import _f_beta
-from huxel.data_utils import data_normalization
 
 
 def _preprocessing_params(observable: str = 'homo_lumo') -> Callable:
@@ -42,6 +41,7 @@ def _f_observable(observable: str, beta: str, external_field: Any = None) -> Cal
     f_beta = _f_beta(beta)
     ext_field = get_external_field(observable, external_field)
 
+    # preprocessing parameters (normalize with respect to carbon)
     f_phys_params = _preprocessing_params(observable)
 
     if observable.lower() == 'homo_lumo' or observable.lower() == 'hl':

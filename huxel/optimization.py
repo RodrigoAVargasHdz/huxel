@@ -14,7 +14,7 @@ from huxel.utils import (
 )
 from huxel.outfiles_utils import get_files_names,  print_head, print_tail, get_params_file_itr
 from huxel.data_utils import save_tr_and_val_loss, batch_to_list_class
-from huxel.observables import _f_observable, _loss_function, _preprocessing_params
+from huxel.observables import _loss_function
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update('jax_disable_jit', True)
@@ -56,7 +56,7 @@ def _optimization(
     # files
     files = get_files_names(obs, n_tr, l, beta, bool_randW, opt_name)
 
-    # print info about the optimiation
+    # print info about the optimization
     print_head(
         files, obs, n_tr, l, lr, w_decay, n_epochs, batch_size, opt_name, beta, list_Wdecay
     )
@@ -80,14 +80,11 @@ def _optimization(
 
     params_bool = get_params_bool(list_Wdecay)
 
-    # preprocessing parameters
-    f_params_preprocessing = _preprocessing_params(obs)
-
     # select the function for off diagonal elements for H
     f_loss_batch = _loss_function(obs, beta, external_field)
     grad_fn = value_and_grad(f_loss_batch, argnums=(0,), has_aux=True)
 
-    # OPTAX ADAM
+    # OPTAX optimizer
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
     optimizer = optax.adamw(learning_rate=lr, mask=params_bool)
 

@@ -49,7 +49,7 @@ def f_homo_lumo_batch(params: dict, batch: Any, f_beta: Callable) -> Tuple:
     for m in batch:
         yi, _ = f_homo_lumo(params, m, f_beta)
         y_pred = jnp.append(y_pred, yi)
-        y_true = jnp.append(y_true, m.homo_lumo_grap_ref)
+        y_true = jnp.append(y_true, m.homo_lumo_gap_ref)
     return y_pred[1:], y_true[1:]
 
 
@@ -120,11 +120,12 @@ def f_polarizability_batch(params: dict, batch: Any, f_beta: callable, external_
     return y_pred[1:], y_true[1:]
 
 
-def f_polarizability(params: dict, molecule: Any, f_beta: callable, external_field: Any = None) -> Any:
+def f_polarizability(params: dict, molecule: myMolecule, f_beta: callable, external_field: Any = None) -> Any:
     """Molecular polarizability
 
     Args:
         params (dict): Hückel model's parameters
+        molecule (class): molecule class
         batch (Any): list of molecules (batch)
         f_beta (callable): atom-atom interaction_
         external_field (Any, optional): External field. Defaults to None.
@@ -138,11 +139,12 @@ def f_polarizability(params: dict, molecule: Any, f_beta: callable, external_fie
     return polarizability
 
 
-def f_energy(params: dict, molecule: Any, f_beta: Callable, external_field: Any = None) -> Any:
+def f_energy(params: dict, molecule: myMolecule, f_beta: Callable, external_field: Any = None) -> Any:
     """Hückel model's energy
 
     Args:
         params (dict): Hückel model's parameters
+        molecule (class): molecule class
         batch (Any): list of molecules (batch)
         f_beta (callable): atom-atom interaction_
         external_field (Any, optional): External field. Defaults to None.
@@ -166,12 +168,12 @@ def f_energy(params: dict, molecule: Any, f_beta: Callable, external_field: Any 
 # --------------------------------------------------------
 
 
-def _construct_huckel_matrix(params: dict, molecule, f_beta: Callable, bool_AA_to_Bhor: bool = True) -> Tuple:
+def _construct_huckel_matrix(params: dict, molecule: myMolecule, f_beta: Callable, bool_AA_to_Bhor: bool = True) -> Tuple:
     """Hückel matrix (batch)
 
     Args:
         params (dict): Hückel model's parameters
-        batch (Any): list of molecules (batch)
+        molecule (class): molecule class
         f_beta (callable): atom-atom interaction_
         bool_AA_to_Bohr (bool, optional): Armstrong (AA) or Bohr units
 
@@ -208,8 +210,8 @@ def _construct_huckel_matrix_field(molecule: Any, field: Any) -> Any:
     """Diagonal elements of Hückel matrix in the presence of an external field
 
     Args:
-        molecule (Any):
-        field (Any): 
+        molecule (class): molecule class
+        field (Any): external field
 
     Returns:
         Any: Diagonal of the Hückel matrix in the presence of an external field

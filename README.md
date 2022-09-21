@@ -47,7 +47,7 @@ We implemented various *atom-atom* interaction functions.
    1. `opt` -> training
    2. `pred` -> prediction of test set
    3. `pred_def` -> prediction using default parameters (from literature)
-6. `--obs`, objective to optimize options `[homo_lumo,polarizability]`
+6. `--obs`, objective to optimize, options `[homo_lumo,pol]`
 7. `--beta`, beta function (`['c','linear','exp','linear_abs','exp_freezeR','exp_abs_freezeR','linear_freezeR','linear_abs_freezeR']`)
 
 #### examples

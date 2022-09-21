@@ -69,16 +69,17 @@ def get_batches(Dtr: Any, batch_size: int, key: PRNGKey) -> Tuple:
     return batches, n_batches
 
 
-def split_training_test(n_tr: int, key: PRNGKey, D: Any = None) -> Tuple:
+def split_training_test(n_tr: int, key: PRNGKey, D: Any = None, n_val: int = 1000) -> Tuple:
     """Split training and validation data
 
     Args:
         n_tr (int): number of training data. If n_tr <= 99, N is considered as % of the data set
         key (PRNGKey): a PRNG key used as the random key.
         D (Any, optional): Data set. Defaults to None, loads data using get_raw_data() function.
+        n_val (int, optional): Validation data number. Default 1000.
 
     Returns:
-        Tuple: _description_
+        Tuple: training and validation data tuples
     """
     if D is None:
         D, _ = get_raw_data()
@@ -88,7 +89,7 @@ def split_training_test(n_tr: int, key: PRNGKey, D: Any = None) -> Tuple:
     if n_tr <= 99:
         n_tr = int(N_tot * n_tr / 100)
 
-    n_val = n_tr + 1000  # extra 1000 points for validation
+    n_val = n_tr + n_val  # extra 1000 points for validation
 
     # represents the absolute number of test samples
     N_tst = N_tot - n_tr
@@ -164,7 +165,7 @@ def batch_to_list_class(batch: Any, obs: str = 'homo_lumo') -> Any:
             smiles=b["smiles"],
             atom_types=b["atom_types"],
             connectivity_matrix=b["conectivity_matrix"],
-            homo_lumo_grap_ref=b["homo_lumo_grap_ref"],
+            homo_lumo_gap_ref=b["homo_lumo_grap_ref"],
             polarizability_ref=b['polarizability_ref'],
             xyz=b['xyz'],
             dm=b["dm"],

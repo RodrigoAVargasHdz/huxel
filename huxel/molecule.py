@@ -15,7 +15,7 @@ class myMolecule:
         smiles: str,
         atom_types: list,
         connectivity_matrix: Any = jnp.ones(1),
-        homo_lumo_grap_ref: float = 1.0,
+        homo_lumo_gap_ref: float = 1.0,
         polarizability_ref: float = 1.0,
         xyz: Any = jnp.ones((2, 3)),
         dm: Any = None
@@ -27,7 +27,7 @@ class myMolecule:
             smiles (str): SMILE
             atom_types (list): list of atoms
             connectivity_matrix (Any, optional): connectivity matrix. Defaults to jnp.ones(1).
-            homo_lumo_grap_ref (float, optional): True HOMO-LUMO gap. Defaults to 1.0.
+            homo_lumo_gap_ref (float, optional): True HOMO-LUMO gap. Defaults to 1.0.
             polarizability_ref (float, optional): True polarizability. Defaults to 1.0.
             xyz (Any, optional): XYZ matrix. Defaults to jnp.ones((2, 3)).
             dm (Any, optional): Distance matrix. Defaults to None.
@@ -36,7 +36,7 @@ class myMolecule:
         self.smiles = smiles
         self.atom_types = atom_types
         self.connectivity_matrix = connectivity_matrix
-        self.homo_lumo_grap_ref = homo_lumo_grap_ref
+        self.homo_lumo_gap_ref = homo_lumo_gap_ref
         self.polarizability_ref = polarizability_ref
         self.xyz = xyz
         self.dm = dm
@@ -48,7 +48,7 @@ class myMolecule:
         self.dm = jnp.linalg.norm(z, axis=2)  # compute the bond length
 
     def get_dm_AA_to_Bohr(self):
-        """distance matrix in Armstrong
+        """distance matrix in Bohr
         """
         z = self.xyz[:, None] - self.xyz[None, :]
         dm = jnp.linalg.norm(z, axis=2)  # compute the bond length
