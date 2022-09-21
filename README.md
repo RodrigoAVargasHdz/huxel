@@ -4,7 +4,7 @@
 
 Using JAX, we created a fully differentiable Hückel model where all parameters are optimized with respect to some reference data.
 
-## Beta functions
+## Beta functions (atom-atom interaction)
 
 We implemented various *atom-atom* interaction functions.
 
@@ -35,7 +35,7 @@ We implemented various *atom-atom* interaction functions.
 
 
 
-## Quickstart
+## Quick start
 
 `python main.py *args`
 
@@ -73,7 +73,7 @@ Reference data was computed at the **TDA-SCS-$\omega$PBEPP86/def2-SVP** level of
 
 **Polarizability**
 
-Molecular polarizabilities used as reference data were computed using **dftd4** (version 3.4.0) via the default methodology summing atomic polarizabilities.
+Reference data for molecular polarizabilities were computed using **dftd4** (version 3.4.0) via the default methodology, summing atomic polarizabilities.
 
 <!-- ## Requirements
 - JAX
