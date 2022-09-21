@@ -1,0 +1,5 @@
+huxel/data/gdb13_list_100000_hl-pol-xyz_test.npy filter=lfs diff=lfs merge=lfs -text
+huxel/data/gdb13_list_100000_hl-pol-xyz_training.npy filter=lfs diff=lfs merge=lfs -text
+huxel/data/gdb13_list_100000_hl-pol-xyz_t*.npy filter=lfs diff=lfs merge=lfs -text
+huxel/data/data_gdb13_test.npy filter=lfs diff=lfs merge=lfs -text
+huxel/data/data_gdb13_training.npy filter=lfs diff=lfs merge=lfs -text

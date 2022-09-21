@@ -1,40 +1,52 @@
 import time
 from typing import Any
-import numpy as onp
-
 import jax
 import jax.numpy as jnp
-from jax import random, lax, value_and_grad
+from jax import value_and_grad
 
-from flax import optim
 import optax
 
 from huxel.data_utils import get_tr_val_data
 from huxel.utils import (
-    get_files_names,
     get_init_params,
     get_random_params,
     get_params_bool,
 )
-from huxel.utils import print_head, print_tail, get_params_file_itr
+from huxel.outfiles_utils import get_files_names,  print_head, print_tail, get_params_file_itr
 from huxel.data_utils import save_tr_and_val_loss, batch_to_list_class
-from huxel.observables import _f_observable, _loss_function, _preprocessing_params
+from huxel.observables import _loss_function
 
-from jax.config import config
 jax.config.update("jax_enable_x64", True)
+jax.config.update('jax_disable_jit', True)
 
 # label_parmas_all = ['alpha', 'beta', 'h_x', 'h_xy', 'r_xy', 'y_xy']
+
+
 def _optimization(
-    obs:str='homo_lumo',
-    n_tr:int=1,
-    batch_size:int=100,
-    lr:float=2e-3,
-    l:int=0,
-    beta:str="exp",
-    list_Wdecay:list=None,
-    bool_randW:bool=False,
-    external_field:Any=None,
-):
+    obs: str = 'homo_lumo',
+    n_tr: int = 1,
+    batch_size: int = 100,
+    lr: float = 2e-3,
+    l: int = 0,
+    beta: str = "exp",
+    list_Wdecay: list = None,
+    bool_randW: bool = False,
+    external_field: Any = None,
+) -> None:
+    """Optimization routine
+
+    Args:
+        obs (str, optional): target observable. Defaults to 'homo_lumo'.
+        n_tr (int, optional): number of training data. Defaults to 1.
+        batch_size (int, optional): batch size. Defaults to 100.
+        lr (float, optional): learning rate. Defaults to 2e-3.
+        l (int, optional): label. Defaults to 0.
+        beta (str, optional): atom-atom interaction. Defaults to "exp".
+        list_Wdecay (list, optional): list of parameters for weight decay. Defaults to None.
+        bool_randW (bool, optional): boolean for random initial parameters. Defaults to False. (False -> literature parameters; True -> random parameters)
+        external_field (Any, optional): external field value. Defaults to None.
+
+    """
 
     # optimization parameters
     w_decay = 1e-4
@@ -44,7 +56,7 @@ def _optimization(
     # files
     files = get_files_names(obs, n_tr, l, beta, bool_randW, opt_name)
 
-    # print info about the optimiation
+    # print info about the optimization
     print_head(
         files, obs, n_tr, l, lr, w_decay, n_epochs, batch_size, opt_name, beta, list_Wdecay
     )
@@ -68,23 +80,22 @@ def _optimization(
 
     params_bool = get_params_bool(list_Wdecay)
 
-    # preprocessing parameters
-    f_params_preprocessing = _preprocessing_params(obs)
-
     # select the function for off diagonal elements for H
     f_loss_batch = _loss_function(obs, beta, external_field)
     grad_fn = value_and_grad(f_loss_batch, argnums=(0,), has_aux=True)
 
-    # OPTAX ADAM
+    # OPTAX optimizer
     # schedule = optax.exponential_decay(init_value=lr,transition_steps=25,decay_rate=0.1)
     optimizer = optax.adamw(learning_rate=lr, mask=params_bool)
+
     opt_state = optimizer.init(params_init)
     params = params_init
 
     # @jit
     def train_step(params, optimizer_state, batch):
-        (loss,_), grads = grad_fn(params, batch)
-        updates, opt_state = optimizer.update(grads[0], optimizer_state, params)
+        (loss, _), grads = grad_fn(params, batch)
+        updates, opt_state = optimizer.update(
+            grads[0], optimizer_state, params)
         return optax.apply_updates(params, updates), opt_state, loss
 
     loss_val0 = 1e16
@@ -100,7 +111,7 @@ def _optimization(
             loss_tr_epoch.append(loss_tr)
 
         loss_tr_mean = jnp.mean(jnp.asarray(loss_tr_epoch).ravel())
-        loss_val,_ = f_loss_batch(params, batch_val)
+        loss_val, _ = f_loss_batch(params, batch_val)
 
         f = open(files["f_out"], "a+")
         time_epoch = time.time() - start_time_epoch
@@ -113,7 +124,7 @@ def _optimization(
 
         if loss_val < loss_val0:
             loss_val0 = loss_val
-            f_params = params #f_params_preprocessing(params)
+            f_params = params  # f_params_preprocessing(params)
             jnp.save(files["f_w"], f_params)
             jnp.save(get_params_file_itr(files, epoch), f_params)
 
