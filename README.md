@@ -53,7 +53,7 @@ We implemented various *atom-atom* interaction functions.
 #### examples
 
 ```
-python main.py --N 50 --lr 2E-2 --l 1 --batch_size 128 --job opt --beta exp_abs 
+python main.py --N 101 --obs pol --lr 2E-2 --l 0 --batch_size 32 --job opt --beta c -Wdecay h_x h_xy 
 
 python main.py --N 50 --job pred --beta exp_abs 
 ```
