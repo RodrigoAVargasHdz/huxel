@@ -69,7 +69,7 @@ Total data:
 
 **HOMO-LUMO gap**
 
-Reference data was computed at the **TDA-SCS-$\omega$PBEPP86/def2-SVP** level of theory using Orca (version 5.0.1).
+Reference data was computed at the **TDA-SCS-![equation](https://latex.codecogs.com/svg.image?\omega)PBEPP86/def2-SVP** level of theory using Orca (version 5.0.1).
 
 **Polarizability**
 
